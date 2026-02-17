@@ -1,0 +1,329 @@
+/**
+ * Список товаров в админке: таблица с превью, фильтрами, раскрытием вариантов, панель статистики.
+ */
+import React, { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  listProducts,
+  listCategories,
+  listManufacturers,
+  getStats,
+  deleteProduct,
+  type ProductListItem,
+  type StatsResponse,
+} from '../api'
+import { getFileUrl } from '../api'
+
+export function ProductList() {
+  const [data, setData] = useState<{ items: ProductListItem[]; total: number; page: number; per_page: number } | null>(
+    null
+  )
+  const [stats, setStats] = useState<StatsResponse | null>(null)
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
+  const [manufacturers, setManufacturers] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [formFilters, setFormFilters] = useState({
+    search: '',
+    category_id: '',
+    is_published: undefined as boolean | undefined,
+    manufacturer: '',
+  })
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: '',
+    category_id: '',
+    is_published: undefined as boolean | undefined,
+    manufacturer: '',
+    page: 1,
+  })
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const [productsRes, statsRes, catsRes, mfrsRes] = await Promise.all([
+        listProducts({
+          search: appliedFilters.search || undefined,
+          category_id: appliedFilters.category_id || undefined,
+          is_published: appliedFilters.is_published,
+          manufacturer: appliedFilters.manufacturer || undefined,
+          page: appliedFilters.page,
+          per_page: 20,
+        }),
+        getStats(),
+        listCategories(),
+        listManufacturers(),
+      ])
+      setData(productsRes)
+      setStats(statsRes)
+      setCategories(catsRes.map((c) => ({ id: c.id, name: c.name })))
+      setManufacturers(mfrsRes)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ошибка загрузки')
+    } finally {
+      setLoading(false)
+    }
+  }, [appliedFilters])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const applyFilters = (e: React.FormEvent) => {
+    e.preventDefault()
+    setAppliedFilters({ ...formFilters, page: 1 })
+  }
+
+  const resetFilters = () => {
+    const empty = {
+      search: '',
+      category_id: '',
+      is_published: undefined as boolean | undefined,
+      manufacturer: '',
+    }
+    setFormFilters(empty)
+    setAppliedFilters({ ...empty, page: 1 })
+  }
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Удалить товар?')) return
+    setDeletingId(id)
+    try {
+      await deleteProduct(id)
+      await loadData()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ошибка удаления')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const imgUrl = (p: ProductListItem): string | null => {
+    if (p.image_url) {
+      const match = p.image_url.match(/\/api\/files\/([a-f0-9-]+)/i)
+      if (match) return getFileUrl(match[1])
+    }
+    return null
+  }
+
+  if (loading && !data) return <p className="loading">Загрузка...</p>
+  if (error && !data) return <p className="error">{error}</p>
+
+  return (
+    <div className="product-list">
+      {/* Панель статистики */}
+      {stats && (
+        <div className="stats-panel">
+          <div className="stat-card">
+            <span className="stat-value">{stats.total_products}</span>
+            <span className="stat-label">Всего товаров</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{stats.published_count}</span>
+            <span className="stat-label">Опубликовано</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{stats.total_views}</span>
+            <span className="stat-label">Просмотры</span>
+          </div>
+        </div>
+      )}
+
+      {/* Фильтры */}
+      <form className="filters" onSubmit={applyFilters}>
+        <input
+          type="search"
+          placeholder="Поиск по названию или артикулу"
+          value={formFilters.search}
+          onChange={(e) => setFormFilters((p) => ({ ...p, search: e.target.value }))}
+          className="filter-input"
+        />
+        <select
+          value={formFilters.category_id}
+          onChange={(e) => setFormFilters((p) => ({ ...p, category_id: e.target.value }))}
+          className="filter-select"
+        >
+          <option value="">Все категории</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={formFilters.manufacturer}
+          onChange={(e) => setFormFilters((p) => ({ ...p, manufacturer: e.target.value }))}
+          className="filter-select"
+        >
+          <option value="">Все производители</option>
+          {manufacturers.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+        <select
+          value={formFilters.is_published === undefined ? '' : String(formFilters.is_published)}
+          onChange={(e) =>
+            setFormFilters((p) => ({
+              ...p,
+              is_published: e.target.value === '' ? undefined : e.target.value === 'true',
+            }))
+          }
+          className="filter-select"
+        >
+          <option value="">Все</option>
+          <option value="true">Опубликованные</option>
+          <option value="false">Черновики</option>
+        </select>
+        <button type="submit" className="btn btn-primary">
+          Применить
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={resetFilters}>
+          Сбросить
+        </button>
+      </form>
+
+      {error && <p className="error">{error}</p>}
+
+      {/* Таблица */}
+      <div className="table-wrap">
+        <table className="product-table">
+          <thead>
+            <tr>
+              <th style={{ width: 48 }}></th>
+              <th>Превью</th>
+              <th>Название</th>
+              <th>Артикул</th>
+              <th>Цена</th>
+              <th>Производитель</th>
+              <th>Категория</th>
+              <th>Статус</th>
+              <th>Просмотры</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data?.items.map((p) => (
+              <React.Fragment key={p.id}>
+                <tr
+                  key={p.id}
+                  className={expandedIds.has(p.id) ? 'expanded' : ''}
+                  onClick={() => p.variants.length > 0 && toggleExpand(p.id)}
+                  style={p.variants.length > 0 ? { cursor: 'pointer' } : undefined}
+                >
+                  <td>
+                    {p.variants.length > 0 && (
+                      <span className="expand-icon">{expandedIds.has(p.id) ? '▼' : '▶'}</span>
+                    )}
+                  </td>
+                  <td>
+                    {imgUrl(p) ? (
+                      <img src={imgUrl(p)!} alt="" className="thumb" />
+                    ) : (
+                      <span className="thumb-placeholder">—</span>
+                    )}
+                  </td>
+                  <td>{p.title}</td>
+                  <td>{p.sku || '—'}</td>
+                  <td>
+                    {p.price_amount != null
+                      ? `${p.price_amount} ${p.price_currency || 'RUB'}`
+                      : '—'}
+                  </td>
+                  <td>{p.manufacturer || '—'}</td>
+                  <td>{p.category_name || '—'}</td>
+                  <td>
+                    <span className={`badge ${p.is_published ? 'badge-success' : 'badge-draft'}`}>
+                      {p.is_published ? 'Опубликован' : 'Черновик'}
+                    </span>
+                  </td>
+                  <td>{p.view_count}</td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <Link to={`/product/${p.id}/edit`} className="btn-link">
+                      Редактировать
+                    </Link>
+                    {' · '}
+                    <button
+                      type="button"
+                      className="btn-link btn-danger"
+                      onClick={() => handleDelete(p.id)}
+                      disabled={deletingId === p.id}
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
+                {expandedIds.has(p.id) && p.variants.length > 0 && (
+                  <tr key={`${p.id}-variants`} className="variants-row">
+                    <td colSpan={10}>
+                      <div className="variants-panel">
+                        <strong>Варианты:</strong>
+                        <table className="variants-table">
+                          <thead>
+                            <tr>
+                              <th>Опция</th>
+                              <th>Значение</th>
+                              <th>В наличии</th>
+                              <th>В заказе</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {p.variants.map((v) => (
+                              <tr key={v.id}>
+                                <td>{v.option_name}</td>
+                                <td>{v.option_value}</td>
+                                <td>{v.stock_qty}</td>
+                                <td>{v.in_order_qty}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Пагинация */}
+      {data && data.total > data.per_page && (
+        <div className="pagination">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={appliedFilters.page <= 1}
+            onClick={() => setAppliedFilters((p) => ({ ...p, page: p.page - 1 }))}
+          >
+            ← Назад
+          </button>
+          <span className="pagination-info">
+            Страница {appliedFilters.page} из {Math.ceil(data.total / data.per_page)}
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={appliedFilters.page >= Math.ceil(data.total / data.per_page)}
+            onClick={() => setAppliedFilters((p) => ({ ...p, page: p.page + 1 }))}
+          >
+            Вперёд →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

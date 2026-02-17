@@ -1,0 +1,51 @@
+# Docker Compose для локальной разработки и продакшн-окружения
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: showcase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/showcase
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      STORAGE_PATH: /app/storage
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174}
+    volumes:
+      - api_storage:/app/storage
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - miniapp_dist:/usr/share/nginx/html/miniapp:ro
+      - admin_dist:/usr/share/nginx/html/admin:ro
+    depends_on:
+      - api
+
+volumes:
+  postgres_data: {}
+  api_storage: {}
+  miniapp_dist: {}
+  admin_dist: {}
