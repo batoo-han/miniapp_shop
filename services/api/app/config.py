@@ -38,7 +38,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> List[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        origins = [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        # Telegram: sandboxed iframe (origin "null") и web.telegram.org
+        extras = ["null", "https://web.telegram.org", "https://web.telegram.k.org"]
+        for e in extras:
+            if e not in origins and "*" not in origins:
+                origins.append(e)
+        return origins
 
 
 @lru_cache
