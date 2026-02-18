@@ -1,0 +1,48 @@
+# Один docker-compose для запуска проекта одной командой:
+#   docker compose up -d --build
+#
+# Требуется один .env в корне (см. .env.example).
+#
+# Важно: по умолчанию используем внешний PostgreSQL.
+# Для доступа к PostgreSQL, работающей на хосте, рекомендуемый хост в DATABASE_URL:
+#   host.docker.internal (Linux поддерживается через extra_hosts)
+#
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.api
+    env_file:
+      - .env
+    environment:
+      # Безопасные дефолты (могут быть переопределены в .env)
+      STORAGE_PATH: /app/storage
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    # Чтобы контейнер видел localhost хоста (PostgreSQL на 127.0.0.1) без пробросов/подсетей.
+    # Это радикально упрощает конфигурацию на Linux-сервере.
+    network_mode: host
+    volumes:
+      - api_storage:/app/storage
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_CONTACT_TELEGRAM_LINK: ${VITE_CONTACT_TELEGRAM_LINK:-}
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  api_storage: {}
+

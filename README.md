@@ -93,14 +93,20 @@ npm run dev
 
 ### Docker
 
-**Вариант A: со своей PostgreSQL в контейнере**
+**Продакшен/сервер: один `.env`, одна команда**
+
+1) В корне проекта:
 ```bash
-docker compose -f infra/docker-compose.yml up -d
+cp .env.example .env
+# отредактируйте DATABASE_URL/JWT_SECRET/ADMIN_PASSWORD/WEB_PORT
 ```
 
-**Вариант B: внешняя PostgreSQL (порт 5432 уже занят)**
+2) Запуск:
+```bash
+docker compose up -d --build
+```
 
-Когда на сервере PostgreSQL уже запущен и порты 5432/80 могут быть заняты. Подробнее: [docs/deploy-server.md](docs/deploy-server.md).
+Подробнее (сервер, внешняя PostgreSQL): [docs/deploy-server.md](docs/deploy-server.md).
 
 1. Создайте БД: `CREATE DATABASE showcase;`
 2. Выполните миграции. **Используйте venv проекта** (не `apt install alembic`):

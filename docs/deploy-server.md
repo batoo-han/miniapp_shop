@@ -28,35 +28,49 @@ alembic upgrade head
 deactivate
 ```
 
-## 3. Сборка фронтендов
+## 3. Docker (одна команда)
 
-```bash
-cd /root/miniapp_shop
-cd apps/miniapp-web && npm install && npm run build && cd ../..
-cd apps/admin-web && npm install && npm run build && cd ../..
-```
+В новой схеме фронтенды собираются **внутри Docker** (см. `infra/Dockerfile.web`), руками `dist` копировать не нужно.
 
 ## 4. Файл .env в корне проекта
 
 Создайте `/root/miniapp_shop/.env`:
 
 ```bash
-# Для доступа из контейнера к PostgreSQL на хосте — 172.17.0.1 (Docker gateway)
-DATABASE_URL=postgresql+asyncpg://showcase_user:ВАШ_ПАРОЛЬ@172.17.0.1:5432/showcase
+# API запускается в режиме host network (см. docker-compose.yml),
+# поэтому PostgreSQL на хосте доступна как localhost.
+DATABASE_URL=postgresql+asyncpg://showcase_user:ВАШ_ПАРОЛЬ@localhost:5432/showcase
 JWT_SECRET=случайная-длинная-строка-секрет
 ADMIN_PASSWORD=пароль-для-админки
 
-# Если порт 80 занят — nginx будет на 8080
-NGINX_PORT=8080
+# Если порт 80 занят — web будет на 8080/8089 и т.д.
+WEB_PORT=8080
 ```
 
 ## 5. Запуск контейнеров
 
 ```bash
 cd /root/miniapp_shop
-# --env-file .env нужен, т.к. Compose по умолчанию ищет .env в infra/, а не в корне
-docker compose -f infra/docker-compose.external-db.yml --env-file .env up -d
+cp .env.example .env  # один раз, дальше только правите .env
+docker compose up -d --build
 ```
+
+**Если всё равно не работает:**
+1. Проверьте, что PostgreSQL принимает соединения из Docker-сети:
+   ```bash
+   # Проверьте postgresql.conf: listen_addresses = '*' или '0.0.0.0'
+   sudo grep listen_addresses /etc/postgresql/*/main/postgresql.conf
+   
+   # Проверьте pg_hba.conf — должна быть строка для Docker-сети:
+   # host    all    all    172.17.0.0/16    md5
+   sudo grep -A 5 "Docker\|172.17" /etc/postgresql/*/main/pg_hba.conf
+   ```
+2. Если PostgreSQL слушает только на localhost, временно разрешите подключения:
+   ```bash
+   # В postgresql.conf: listen_addresses = '*'
+   # В pg_hba.conf добавьте: host all all 172.17.0.0/16 md5
+   sudo systemctl reload postgresql
+   ```
 
 - API: `http://сервер:8000`
 - Мини-апп: `http://сервер:8080/miniapp/` (если NGINX_PORT=8080)
