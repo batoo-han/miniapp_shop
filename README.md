@@ -93,9 +93,35 @@ npm run dev
 
 ### Docker
 
+**Вариант A: со своей PostgreSQL в контейнере**
 ```bash
 docker compose -f infra/docker-compose.yml up -d
 ```
+
+**Вариант B: внешняя PostgreSQL (порт 5432 уже занят)**
+
+Когда на сервере PostgreSQL уже запущен и порт 5432 занят, используйте `docker-compose.external-db.yml`:
+
+1. Создайте БД: `CREATE DATABASE showcase;`
+2. Выполните миграции (с хоста с доступом к БД):
+   ```bash
+   cd services/api
+   DATABASE_URL="postgresql+asyncpg://user:password@host:5432/showcase" alembic upgrade head
+   ```
+3. Соберите фронтенды:
+   ```bash
+   cd apps/miniapp-web && npm install && npm run build
+   cd apps/admin-web && npm install && npm run build
+   ```
+4. Создайте `.env` в корне проекта:
+   ```
+   DATABASE_URL=postgresql+asyncpg://user:password@host:5432/showcase
+   JWT_SECRET=ваш-секрет
+   ADMIN_PASSWORD=ваш-пароль
+   ```
+5. Запустите: `docker compose -f infra/docker-compose.external-db.yml up -d`
+
+   Для PostgreSQL на том же хосте укажите в `DATABASE_URL` хост `host.docker.internal` (или IP хоста) вместо `localhost`.
 
 ## Если не работает
 
@@ -117,6 +143,7 @@ docker compose -f infra/docker-compose.yml up -d
 4. **Админка не входит**: проверьте `ADMIN_PASSWORD=admin` (или `ADMIN_PASSWORD_HASH`) в `services/api/.env`
 5. **Пустой список товаров**: добавьте товары в админке (http://localhost:5174) и включите «Опубликован»
 6. **Ошибка подключения к БД**: проверьте `DATABASE_URL` и что Postgres запущен
+7. **Docker: "bind: address already in use" (порт 5432)**: используйте `docker-compose.external-db.yml` — см. «Вариант B» выше
 
 ## Документация
 
