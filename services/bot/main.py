@@ -10,11 +10,13 @@ import os
 from telegram import Bot, MenuButtonWebApp, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Логирование
+# Логирование: httpx/httpcore не логируем каждый getUpdates
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     level=getattr(logging, os.getenv("LOG_LEVEL", "INFO")),
 )
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
