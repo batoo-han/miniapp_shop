@@ -20,17 +20,20 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-# Приветственный текст при /start
-WELCOME_TEXT = """🛒 Это тестовый магазин с витриной товаров.
+# Приветственный текст при /start (ссылка открывается корректно; кнопка меню — нет во всех клиентах)
+def get_welcome_text() -> str:
+    url = os.getenv("MINIAPP_URL", "https://app.batoohan.ru/miniapp/")
+    return f"""🛒 Это тестовый магазин с витриной товаров.
 
-Для запуска витрины нажмите на кнопку **«Каталог»** в меню внизу слева."""
+Для запуска витрины откройте ссылку:
+{url}"""
 
 
 async def cmd_start(update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработка команды /start: приветствие."""
     user = update.effective_user
     logger.info("User %s started the bot", user.id if user else "unknown")
-    await update.message.reply_text(WELCOME_TEXT, parse_mode="Markdown")
+    await update.message.reply_text(get_welcome_text())
 
 
 async def post_init(application: Application) -> None:
