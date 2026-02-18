@@ -54,7 +54,8 @@ NGINX_PORT=8080
 
 ```bash
 cd /root/miniapp_shop
-docker compose -f infra/docker-compose.external-db.yml up -d
+# --env-file .env нужен, т.к. Compose по умолчанию ищет .env в infra/, а не в корне
+docker compose -f infra/docker-compose.external-db.yml --env-file .env up -d
 ```
 
 - API: `http://сервер:8000`

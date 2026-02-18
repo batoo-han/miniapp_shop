@@ -123,7 +123,8 @@ docker compose -f infra/docker-compose.yml up -d
    JWT_SECRET=ваш-секрет
    ADMIN_PASSWORD=ваш-пароль
    ```
-5. Запустите: `docker compose -f infra/docker-compose.external-db.yml up -d`
+5. Запустите: `docker compose -f infra/docker-compose.external-db.yml --env-file .env up -d`  
+   (флаг `--env-file .env` нужен, чтобы Compose загрузил переменные из корня проекта)
 
    - В `DATABASE_URL` для контейнера укажите хост `172.17.0.1` (Docker gateway) или `host.docker.internal`
    - Если порт 80 занят, добавьте в `.env`: `NGINX_PORT=8080`
