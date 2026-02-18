@@ -37,7 +37,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
+      - "${NGINX_PORT:-80}:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       # Соберите фронтенды: cd apps/miniapp-web && npm run build; cd apps/admin-web && npm run build

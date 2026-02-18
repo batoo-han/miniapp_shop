@@ -100,13 +100,17 @@ docker compose -f infra/docker-compose.yml up -d
 
 **Вариант B: внешняя PostgreSQL (порт 5432 уже занят)**
 
-Когда на сервере PostgreSQL уже запущен и порт 5432 занят, используйте `docker-compose.external-db.yml`:
+Когда на сервере PostgreSQL уже запущен и порты 5432/80 могут быть заняты. Подробнее: [docs/deploy-server.md](docs/deploy-server.md).
 
 1. Создайте БД: `CREATE DATABASE showcase;`
-2. Выполните миграции (с хоста с доступом к БД):
+2. Выполните миграции. **Используйте venv проекта** (не `apt install alembic`):
    ```bash
    cd services/api
-   DATABASE_URL="postgresql+asyncpg://user:password@host:5432/showcase" alembic upgrade head
+   python3 -m venv .venv
+   source .venv/bin/activate   # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   export DATABASE_URL="postgresql+asyncpg://user:password@localhost:5432/showcase"
+   alembic upgrade head
    ```
 3. Соберите фронтенды:
    ```bash
@@ -121,7 +125,8 @@ docker compose -f infra/docker-compose.yml up -d
    ```
 5. Запустите: `docker compose -f infra/docker-compose.external-db.yml up -d`
 
-   Для PostgreSQL на том же хосте укажите в `DATABASE_URL` хост `host.docker.internal` (или IP хоста) вместо `localhost`.
+   - В `DATABASE_URL` для контейнера укажите хост `172.17.0.1` (Docker gateway) или `host.docker.internal`
+   - Если порт 80 занят, добавьте в `.env`: `NGINX_PORT=8080`
 
 ## Если не работает
 
@@ -144,6 +149,8 @@ docker compose -f infra/docker-compose.yml up -d
 5. **Пустой список товаров**: добавьте товары в админке (http://localhost:5174) и включите «Опубликован»
 6. **Ошибка подключения к БД**: проверьте `DATABASE_URL` и что Postgres запущен
 7. **Docker: "bind: address already in use" (порт 5432)**: используйте `docker-compose.external-db.yml` — см. «Вариант B» выше
+8. **Docker: порт 80 занят**: в `.env` добавьте `NGINX_PORT=8080`
+9. **Alembic: ImportError async_sessionmaker**: не используйте `apt install alembic`. Создайте venv и установите зависимости: `cd services/api && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 
 ## Документация
 
