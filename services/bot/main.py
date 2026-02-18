@@ -7,7 +7,7 @@ Telegram-бот для запуска витрины товаров (Mini App).
 import logging
 import os
 
-from telegram import Bot, MenuButtonWebApp, WebAppInfo
+from telegram import KeyboardButton, MenuButtonWebApp, ReplyKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # Логирование: httpx/httpcore не логируем каждый getUpdates
@@ -20,25 +20,85 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-# Приветственный текст при /start (ссылка открывается корректно; кнопка меню — нет во всех клиентах)
+def get_miniapp_url() -> str:
+    """
+    URL Mini App.
+
+    Важно по документации Telegram:
+    - это должен быть HTTPS-URL
+    - Web App открывается из приватного чата с ботом через кнопки типа `web_app`
+    """
+    return os.getenv("MINIAPP_URL", "https://app.batoohan.ru/miniapp/").strip()
+
+
 def get_welcome_text() -> str:
-    url = os.getenv("MINIAPP_URL", "https://app.batoohan.ru/miniapp/")
+    """
+    Приветственный текст при /start.
+
+    Почему добавляем ссылку в текст:
+    - по опыту часть клиентов/режимов Telegram может вести себя по-разному с кнопкой меню;
+      ссылка остаётся самым надёжным способом открыть витрину.
+    """
+    url = get_miniapp_url()
     return f"""🛒 Это тестовый магазин с витриной товаров.
 
-Для запуска витрины откройте ссылку:
+Для запуска витрины нажмите на кнопку «Каталог».
+
+Если кнопка не открывает витрину, откройте ссылку:
 {url}"""
+
+
+async def ensure_menu_button_for_chat(application: Application, chat_id: int) -> None:
+    """
+    Гарантируем кнопку меню «Каталог» для конкретного чата.
+
+    По Bot API `setChatMenuButton` работает только для приватных чатов.
+    Выставлять на /start надёжнее, чем надеяться на "дефолтную" кнопку.
+    """
+    miniapp_url = get_miniapp_url()
+    await application.bot.set_chat_menu_button(
+        chat_id=chat_id,
+        menu_button=MenuButtonWebApp(
+            text="Каталог",
+            web_app=WebAppInfo(url=miniapp_url),
+        ),
+    )
 
 
 async def cmd_start(update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработка команды /start: приветствие."""
     user = update.effective_user
     logger.info("User %s started the bot", user.id if user else "unknown")
-    await update.message.reply_text(get_welcome_text())
+    if not update.effective_chat:
+        return
+
+    # Важный момент: кнопки `web_app` (и меню-кнопка) корректно работают в приватном чате с ботом.
+    await ensure_menu_button_for_chat(context.application, update.effective_chat.id)
+
+    miniapp_url = get_miniapp_url()
+
+    # Рекомендованный Telegram способ запуска Mini App — кнопка `web_app` в reply keyboard.
+    # Она отображается над полем ввода и, как правило, работает стабильнее, чем кнопка меню
+    # в разных клиентах (Desktop/Web/мобильные).
+    reply_kb = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="Каталог", web_app=WebAppInfo(url=miniapp_url))]],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+        is_persistent=True,
+        input_field_placeholder="Нажмите «Каталог», чтобы открыть витрину",
+    )
+
+    if update.message:
+        await update.message.reply_text(
+            get_welcome_text(),
+            reply_markup=reply_kb,
+            disable_web_page_preview=True,
+        )
 
 
 async def post_init(application: Application) -> None:
     """Установка кнопки «Каталог» в меню бота (по умолчанию для всех чатов)."""
-    miniapp_url = os.getenv("MINIAPP_URL", "https://app.batoohan.ru/miniapp/")
+    miniapp_url = get_miniapp_url()
     await application.bot.set_chat_menu_button(
         menu_button=MenuButtonWebApp(
             text="Каталог",
