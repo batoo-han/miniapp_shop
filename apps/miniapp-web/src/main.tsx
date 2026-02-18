@@ -21,11 +21,12 @@ if (tg) {
 
 function showFatal(message: string) {
   const el = document.getElementById('root')
+  const safeMessage = message.replace(/&/g, '&amp;').replace(/</g, '&lt;')
   if (el) {
     el.innerHTML = `
       <div style="padding:16px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
         <div style="font-size:16px;font-weight:600;margin-bottom:8px">Не удалось открыть витрину</div>
-        <div style="white-space:pre-wrap;line-height:1.35">${message.replaceAll('&', '&amp;').replaceAll('<', '&lt;')}</div>
+        <div style="white-space:pre-wrap;line-height:1.35">${safeMessage}</div>
       </div>
     `
   }
