@@ -1,8 +1,10 @@
 /**
  * API-клиент для витрины (публичные эндпоинты)
  */
-// В dev с прокси используем /api (идёт на localhost:8000). В prod — полный URL из .env
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api')
+// В dev и prod по умолчанию используем относительный /api,
+// чтобы не было mixed content при HTTPS. При необходимости
+// можно переопределить через VITE_API_URL.
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export type ProductListItem = {
   id: string
@@ -75,7 +77,7 @@ export async function trackProductView(slug: string): Promise<void> {
 
 /** Полный URL файла для скачивания/просмотра */
 export function getFileUrl(urlPath: string): string {
-  const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api')
+  const apiBase = import.meta.env.VITE_API_URL || '/api'
   const base = apiBase.replace(/\/api\/?$/, '')
   return urlPath.startsWith('http') ? urlPath : (base ? base + urlPath : urlPath)
 }
