@@ -3,12 +3,23 @@
 #
 # Требуется один .env в корне (см. .env.example).
 #
-# Важно: по умолчанию используем внешний PostgreSQL.
-# Для доступа к PostgreSQL, работающей на хосте, рекомендуемый хост в DATABASE_URL:
-#   host.docker.internal (Linux поддерживается через extra_hosts)
-#
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: showcase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Порт 5432 наружу НЕ публикуем, Postgres доступен только из docker-сети.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -16,14 +27,17 @@ services:
     env_file:
       - .env
     environment:
-      # Безопасные дефолты (могут быть переопределены в .env)
+      # Подключение к внутреннему Postgres
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/showcase
       STORAGE_PATH: /app/storage
       CORS_ORIGINS: ${CORS_ORIGINS:-*}
-    # Чтобы контейнер видел localhost хоста (PostgreSQL на 127.0.0.1) без пробросов/подсетей.
-    # Это радикально упрощает конфигурацию на Linux-сервере.
-    network_mode: host
     volumes:
       - api_storage:/app/storage
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   web:
@@ -35,8 +49,6 @@ services:
         VITE_CONTACT_TELEGRAM_LINK: ${VITE_CONTACT_TELEGRAM_LINK:-}
     env_file:
       - .env
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "${WEB_PORT:-80}:80"
     depends_on:
@@ -44,5 +56,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data: {}
   api_storage: {}
 
