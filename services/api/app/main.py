@@ -51,3 +51,16 @@ async def health():
     """Проверка работоспособности сервиса."""
     logger.debug("Health check")
     return {"status": "ok"}
+
+
+@app.get("/api/health")
+async def api_health():
+    """
+    Проверка работоспособности сервиса через префикс `/api`.
+
+    Зачем:
+    - фронтенды обращаются к API через `/api` за reverse-proxy nginx
+    - удобно для диагностики доступности API из WebView/Telegram WebApp-контейнера
+    """
+    logger.debug("API health check")
+    return {"status": "ok"}
