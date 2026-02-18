@@ -109,6 +109,37 @@ NGINX_PORT=8080
 
 При работе по HTTPS возможна ошибка Mixed Content: страница загружается по HTTPS, а запросы к API — по HTTP. Ниже — проверенные меры.
 
+## 10. Mini App «пустой» при запуске из кнопки Telegram (важно)
+
+Симптом:
+- по **прямой ссылке** `https://app.example.ru/miniapp/` витрина открывается,
+- но при запуске из **кнопки «Каталог»** (reply keyboard `web_app` или кнопка меню `MenuButtonWebApp`) экран пустой.
+
+На практике это часто связано с тем, что в некоторых клиентах (особенно **Telegram Web**) Mini App открывается **внутри iframe**. Если ваш внешний nginx/прокси добавляет заголовки, запрещающие встраивание, Telegram покажет «пустую» страницу.
+
+Проверьте и исправьте:
+
+- **X-Frame-Options**: не должно быть `DENY` или `SAMEORIGIN` для `/miniapp/`.
+- **Content-Security-Policy**: не должно быть `frame-ancestors 'none'`. Нужно разрешить домены Telegram.
+
+Пример (внешний nginx) — разрешить встраивание для Telegram:
+
+```nginx
+location /miniapp/ {
+    proxy_pass http://127.0.0.1:8090;  # порт web-контейнера
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Разрешаем iframe в Telegram Web
+    add_header Content-Security-Policy "frame-ancestors 'self' https://web.telegram.org https://web.telegram.k.org https://web.telegram.me https://t.me https://*.telegram.org;" always;
+    # Убедитесь, что НЕ добавляете X-Frame-Options: DENY/SAMEORIGIN
+}
+```
+
+Также проверьте настройки в **BotFather**:
+- в настройках Web App/Domain должен быть разрешён домен `app.example.ru` (иначе Web App может не открываться корректно из кнопки).
+
 ### 9.1 Внешний прокси
 
 Внешний nginx/traefik должен передавать `X-Forwarded-Proto: https` внутрь контейнера `web`, чтобы redirect (307) формировался с `https://`, а не `http://`.
