@@ -93,3 +93,17 @@ NGINX_PORT=8080
 ```
 
 Сервис будет доступен на `http://сервер:8080`.
+
+## 8. HTTPS (внешний прокси с SSL)
+
+Если миниапп открывается по HTTPS (например, через внешний nginx/traefik), **внешний прокси должен передавать** `X-Forwarded-Proto: https` во внутренний контейнер `web`. Иначе API будет формировать redirect (307) с `Location: http://...`, что вызовет Mixed Content.
+
+Пример для внешнего nginx:
+```nginx
+location /miniapp/ {
+    proxy_pass http://127.0.0.1:8080;  # порт web-контейнера
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;   # важно для HTTPS
+}
+```
