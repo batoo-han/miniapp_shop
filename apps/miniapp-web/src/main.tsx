@@ -12,9 +12,4 @@ if (tg) {
   tg.expand?.()
 }
 
-// Откладываем рендер на следующий кадр — WebView в Telegram Desktop иногда не успевает с layout.
-// StrictMode отключён: двойной mount может давать пустой экран в embedded WebView.
-const root = document.getElementById('root')!
-requestAnimationFrame(() => {
-  ReactDOM.createRoot(root).render(<App />)
-})
+ReactDOM.createRoot(document.getElementById('root')!).render(<App />)

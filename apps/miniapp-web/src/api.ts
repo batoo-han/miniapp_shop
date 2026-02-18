@@ -1,10 +1,15 @@
 /**
  * API-клиент для витрины (публичные эндпоинты)
  */
-// В dev и prod по умолчанию используем относительный /api,
-// чтобы не было mixed content при HTTPS. При необходимости
-// можно переопределить через VITE_API_URL.
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+// В dev/prod используем /api. В WebView явно берём origin — некоторые WebView
+// (например Telegram Desktop) некорректно резолвят относительные URL.
+function getApiBase(): string {
+  const fromEnv = import.meta.env.VITE_API_URL
+  if (fromEnv && fromEnv.startsWith('http')) return fromEnv.replace(/\/$/, '')
+  if (typeof window !== 'undefined') return window.location.origin + '/api'
+  return fromEnv || '/api'
+}
+const API_BASE = getApiBase()
 
 export type ProductListItem = {
   id: string
@@ -77,7 +82,7 @@ export async function trackProductView(slug: string): Promise<void> {
 
 /** Полный URL файла для скачивания/просмотра */
 export function getFileUrl(urlPath: string): string {
-  const apiBase = import.meta.env.VITE_API_URL || '/api'
+  const apiBase = getApiBase()
   const base = apiBase.replace(/\/api\/?$/, '')
   return urlPath.startsWith('http') ? urlPath : (base ? base + urlPath : urlPath)
 }
