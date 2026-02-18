@@ -10,7 +10,8 @@ miniapp_shop/
 │   ├── miniapp-web/     # Telegram Mini App (витрина)
 │   └── admin-web/       # Веб-админка
 ├── services/
-│   └── api/             # FastAPI backend
+│   ├── api/             # FastAPI backend
+│   └── bot/             # Telegram-бот (приветствие + кнопка «Каталог»)
 ├── infra/               # Docker, nginx
 ├── docs/                # Документация
 └── storage/             # Загруженные файлы (не в git)
@@ -162,6 +163,7 @@ docker compose up -d --build
 ## Документация
 
 - [Архитектура](docs/architecture.md)
+- [Telegram-бот](docs/telegram-bot.md)
 - [Бизнес-логика](docs/business-logic.md)
 - [План реализации](docs/implementation-plan.md)
 - [Руководство пользователя](docs/user-guide.md)

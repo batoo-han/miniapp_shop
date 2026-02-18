@@ -1,0 +1,2 @@
+# Telegram Bot для запуска Mini App
+python-telegram-bot[webhooks]==21.7

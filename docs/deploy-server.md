@@ -32,7 +32,18 @@ deactivate
 
 В новой схеме фронтенды собираются **внутри Docker** (см. `infra/Dockerfile.web`), руками `dist` копировать не нужно.
 
-## 4. Файл .env в корне проекта
+## 4. Telegram-бот (опционально)
+
+Чтобы пользователи могли запускать витрину из Telegram, добавьте бота. Получите токен у [@BotFather](https://t.me/BotFather), в `.env` укажите:
+
+```
+BOT_TOKEN=123456:ABC-DEF...
+MINIAPP_URL=https://app.batoohan.ru/miniapp/
+```
+
+Подробнее: [docs/telegram-bot.md](telegram-bot.md).
+
+## 5. Файл .env в корне проекта
 
 Создайте `/root/miniapp_shop/.env`:
 
@@ -47,7 +58,7 @@ ADMIN_PASSWORD=пароль-для-админки
 WEB_PORT=8080
 ```
 
-## 5. Запуск контейнеров
+## 6. Запуск контейнеров
 
 ```bash
 cd /root/miniapp_shop
@@ -78,14 +89,14 @@ docker compose up -d --build
 
 Если порт 80 свободен, можно не указывать NGINX_PORT — nginx будет на 80.
 
-## 6. Удаление старых контейнеров (опционально)
+## 7. Удаление старых контейнеров (опционально)
 
 Если раньше запускали полный compose с db:
 ```bash
 docker compose -f infra/docker-compose.external-db.yml down --remove-orphans
 ```
 
-## 7. Если порт 80 уже занят
+## 8. Если порт 80 уже занят
 
 В `.env` добавьте:
 ```
@@ -94,9 +105,13 @@ NGINX_PORT=8080
 
 Сервис будет доступен на `http://сервер:8080`.
 
-## 8. HTTPS (внешний прокси с SSL)
+## 9. HTTPS и Mixed Content (важно)
 
-Если миниапп открывается по HTTPS (например, через внешний nginx/traefik), **внешний прокси должен передавать** `X-Forwarded-Proto: https` во внутренний контейнер `web`. Иначе API будет формировать redirect (307) с `Location: http://...`, что вызовет Mixed Content.
+При работе по HTTPS возможна ошибка Mixed Content: страница загружается по HTTPS, а запросы к API — по HTTP. Ниже — проверенные меры.
+
+### 9.1 Внешний прокси
+
+Внешний nginx/traefik должен передавать `X-Forwarded-Proto: https` внутрь контейнера `web`, чтобы redirect (307) формировался с `https://`, а не `http://`.
 
 Пример для внешнего nginx:
 ```nginx
@@ -107,3 +122,12 @@ location /miniapp/ {
     proxy_set_header X-Forwarded-Proto $scheme;   # важно для HTTPS
 }
 ```
+
+### 9.2 Trailing slash (избежание 307 redirect)
+
+API ожидает `/api/products/` (с завершающим слэшем). Фронтенд вызывает `/api/products/?...`, чтобы сразу попадать на нужный маршрут без redirect. Это уже учтено в коде `apps/miniapp-web/src/api.ts`.
+
+### 9.3 Uvicorn и nginx
+
+- API запускается с флагом `--proxy-headers` (см. `infra/Dockerfile.api`), чтобы учитывать `X-Forwarded-Proto`.
+- Внутренний nginx передаёт `X-Forwarded-Proto` от внешнего прокси в backend (см. `infra/nginx.conf`, `$forwarded_proto`).

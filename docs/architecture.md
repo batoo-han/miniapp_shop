@@ -4,6 +4,7 @@
 
 Telegram Mini App «витрина товаров» состоит из:
 
+- **Telegram Bot** — приветствие и кнопка «Каталог» для запуска Mini App
 - **Mini App (витрина)** — SPA для просмотра товаров внутри Telegram
 - **Admin Web** — отдельная веб-админка для управления контентом
 - **API** — FastAPI backend, единая точка данных и файлов
@@ -26,6 +27,7 @@ flowchart TD
 
 | Компонент | Технологии | Назначение |
 |-----------|------------|------------|
+| services/bot | Python, python-telegram-bot | Приветствие при /start, кнопка «Каталог» (Web App) в меню чата |
 | apps/miniapp-web | React, Vite, @telegram-apps/sdk | Витрина товаров, карточка товара, скачивание файлов, кнопка связи |
 | apps/admin-web | React, Vite | CRUD товаров, загрузка фото и файлов, ТТХ, публикация |
 | services/api | FastAPI, SQLAlchemy, Alembic | REST API, валидация initData, JWT, выдача файлов |

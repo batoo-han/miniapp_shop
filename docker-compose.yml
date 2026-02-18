@@ -40,6 +40,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  bot:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile.bot
+    env_file:
+      - .env
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      MINIAPP_URL: ${MINIAPP_URL:-https://app.batoohan.ru/miniapp/}
+    restart: unless-stopped
+
   web:
     build:
       context: .
