@@ -1,18 +1,33 @@
 /**
  * Корневой компонент витрины — роутинг и обёртка.
- * HashRouter для совместимости с Telegram WebView.
+ *
+ * Важно:
+ * - Раньше использовали HashRouter для совместимости с Telegram WebView.
+ * - Но Telegram (особенно Web-клиент) может добавлять служебные данные в URL fragment (hash),
+ *   из-за чего HashRouter начинает считать это "маршрутом" и приложение выглядит пустым,
+ *   при этом запросы к API не выполняются.
+ *
+ * Поэтому используем BrowserRouter (hash игнорируется) + nginx уже настроен на SPA (try_files),
+ * так что прямые переходы/обновления страниц работают.
  */
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ProductList } from './pages/ProductList'
 import { ProductDetail } from './pages/ProductDetail'
 
 export function App() {
+  // В проде Mini App живёт по /miniapp/. В dev (vite) — обычно на /.
+  const basename =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/miniapp')
+      ? '/miniapp'
+      : '/'
   return (
-    <HashRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/" element={<ProductList />} />
         <Route path="/product/:slug" element={<ProductDetail />} />
+        {/* Никогда не показываем "пустой экран" при неожиданных параметрах/маршрутах */}
+        <Route path="*" element={<ProductList />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   )
 }
