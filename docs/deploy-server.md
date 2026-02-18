@@ -101,7 +101,7 @@ NGINX_PORT=8080
 Пример для внешнего nginx:
 ```nginx
 location /miniapp/ {
-    proxy_pass http://127.0.0.1:8080;  # порт web-контейнера
+    proxy_pass http://127.0.0.1:8090;  # порт web-контейнера
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;   # важно для HTTPS

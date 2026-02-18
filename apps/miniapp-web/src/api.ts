@@ -49,7 +49,7 @@ export async function fetchProducts(
   sort = 'sort_order'
 ): Promise<ProductListResponse> {
   const params = new URLSearchParams({ page: String(page), per_page: String(perPage), sort })
-  const res = await fetch(`${API_BASE}/products?${params}`)
+  const res = await fetch(`${API_BASE}/products/?${params}`)
   if (!res.ok) throw new Error('Не удалось загрузить товары')
   return res.json()
 }
