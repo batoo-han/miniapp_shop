@@ -298,14 +298,13 @@ export function Settings() {
             <label>
               Цвет фона карточек товаров
               <input
-                type="text"
-                value={formData.miniapp_card_bg_color || 'rgba(255, 255, 255, 0.1)'}
+                type="color"
+                value={formData.miniapp_card_bg_color || '#2a2a2a'}
                 onChange={(e) =>
                   setFormData((d) => ({ ...d, miniapp_card_bg_color: e.target.value }))
                 }
-                placeholder="rgba(255, 255, 255, 0.1) или #ffffff"
               />
-              <small>Цвет фона карточек товаров (можно использовать rgba для прозрачности, например: rgba(255, 255, 255, 0.1))</small>
+              <small>Цвет фона карточек товаров</small>
             </label>
           </div>
         </section>

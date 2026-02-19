@@ -113,7 +113,7 @@ export async function fetchMiniappSettings(): Promise<MiniappSettings> {
       heading_color: '#ffffff',
       price_color: '#00d4ff',
       hint_color: '#cccccc',
-      card_bg_color: 'rgba(255, 255, 255, 0.1)',
+      card_bg_color: '#2a2a2a',
       contact_telegram_link: 'https://t.me/support',
     }
   }

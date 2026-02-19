@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     miniapp_heading_color: str = "#ffffff"  # Цвет заголовков
     miniapp_price_color: str = "#00d4ff"  # Цвет цен
     miniapp_hint_color: str = "#cccccc"  # Цвет подсказок/вторичного текста
-    miniapp_card_bg_color: str = "rgba(255, 255, 255, 0.1)"  # Цвет фона карточек товаров
+    miniapp_card_bg_color: str = "#2a2a2a"  # Цвет фона карточек товаров
 
     @property
     def cors_origins_list(self) -> List[str]:
