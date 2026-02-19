@@ -226,7 +226,7 @@ export function Settings() {
                   if (files.length === 0) return
                   try {
                     setSaving(true)
-                    const result = await uploadBackgroundImage(files[0])
+                    await uploadBackgroundImage(files[0])
                     showToast('Фоновое изображение загружено', 'success')
                     loadSettings()
                   } catch (err) {
