@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     api_port: int = 8000
     log_level: str = "INFO"
     log_max_bytes_mb: float = 100.0
+    # Настройки мини-приложения магазина
+    miniapp_shop_name: str = "Test Shop"
+    miniapp_section_title: str = "Витрина"
+    miniapp_footer_text: str = "@TestoSmaipl_bot"
+    miniapp_background_color: str = "#000000"
 
     @property
     def cors_origins_list(self) -> List[str]:

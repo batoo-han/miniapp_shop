@@ -28,6 +28,10 @@ export function Settings() {
         storage_allowed_attachment_types: data.storage_allowed_attachment_types,
         log_level: data.log_level,
         log_max_bytes_mb: data.log_max_bytes_mb,
+        miniapp_shop_name: data.miniapp_shop_name,
+        miniapp_section_title: data.miniapp_section_title,
+        miniapp_footer_text: data.miniapp_footer_text,
+        miniapp_background_color: data.miniapp_background_color,
       })
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Ошибка загрузки настроек', 'error')
@@ -136,11 +140,125 @@ export function Settings() {
               <small>MIME-типы файлов через запятую</small>
             </label>
           </div>
-          <div className="settings-readonly">
-            <div className="readonly-item">
-              <strong>Путь к хранилищу:</strong>
-              <code>{settings.storage_path}</code>
-            </div>
+        </section>
+
+        {/* Настройки мини-приложения магазина */}
+        <section className="settings-section">
+          <h2>Мини-приложение магазина</h2>
+          <div className="form-group">
+            <label>
+              Название магазина
+              <input
+                type="text"
+                value={formData.miniapp_shop_name || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_shop_name: e.target.value }))
+                }
+                placeholder="Test Shop"
+              />
+              <small>Отображается в верхней части мини-приложения</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Заголовок секции товаров
+              <input
+                type="text"
+                value={formData.miniapp_section_title || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_section_title: e.target.value }))
+                }
+                placeholder="Витрина"
+              />
+              <small>Заголовок над списком товаров</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Текст в подвале
+              <input
+                type="text"
+                value={formData.miniapp_footer_text || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_footer_text: e.target.value }))
+                }
+                placeholder="@TestoSmaipl_bot"
+              />
+              <small>Текст, отображаемый в нижней части мини-приложения</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет фона страницы
+              <input
+                type="color"
+                value={formData.miniapp_background_color || '#000000'}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_background_color: e.target.value }))
+                }
+              />
+              <small>Цвет фона страницы мини-приложения (HEX формат)</small>
+            </label>
+          </div>
+        </section>
+
+        {/* Настройки мини-приложения магазина */}
+        <section className="settings-section">
+          <h2>Мини-приложение магазина</h2>
+          <div className="form-group">
+            <label>
+              Название магазина
+              <input
+                type="text"
+                value={formData.miniapp_shop_name || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_shop_name: e.target.value }))
+                }
+                placeholder="Test Shop"
+              />
+              <small>Отображается в верхней части мини-приложения</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Заголовок секции товаров
+              <input
+                type="text"
+                value={formData.miniapp_section_title || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_section_title: e.target.value }))
+                }
+                placeholder="Витрина"
+              />
+              <small>Заголовок над списком товаров</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Текст в подвале
+              <input
+                type="text"
+                value={formData.miniapp_footer_text || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_footer_text: e.target.value }))
+                }
+                placeholder="@TestoSmaipl_bot"
+              />
+              <small>Текст, отображаемый в нижней части мини-приложения</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет фона страницы
+              <input
+                type="color"
+                value={formData.miniapp_background_color || '#000000'}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_background_color: e.target.value }))
+                }
+              />
+              <small>Цвет фона страницы мини-приложения (HEX формат)</small>
+            </label>
           </div>
         </section>
 
@@ -181,21 +299,6 @@ export function Settings() {
               />
               <small>Максимальный размер файла логов в мегабайтах</small>
             </label>
-          </div>
-        </section>
-
-        {/* Только для чтения */}
-        <section className="settings-section">
-          <h2>Системные настройки (только чтение)</h2>
-          <div className="settings-readonly">
-            <div className="readonly-item">
-              <strong>Порт API:</strong>
-              <code>{settings.api_port}</code>
-            </div>
-            <div className="readonly-item">
-              <strong>CORS Origins:</strong>
-              <code>{settings.cors_origins}</code>
-            </div>
           </div>
         </section>
 

@@ -86,3 +86,26 @@ export function getFileUrl(urlPath: string): string {
   const base = apiBase.replace(/\/api\/?$/, '')
   return urlPath.startsWith('http') ? urlPath : (base ? base + urlPath : urlPath)
 }
+
+export type MiniappSettings = {
+  shop_name: string
+  section_title: string
+  footer_text: string
+  background_color: string
+  contact_telegram_link: string
+}
+
+export async function fetchMiniappSettings(): Promise<MiniappSettings> {
+  const res = await fetch(`${API_BASE}/miniapp/settings`)
+  if (!res.ok) {
+    // Fallback к значениям по умолчанию при ошибке
+    return {
+      shop_name: 'Test Shop',
+      section_title: 'Витрина',
+      footer_text: '@TestoSmaipl_bot',
+      background_color: '#000000',
+      contact_telegram_link: 'https://t.me/support',
+    }
+  }
+  return await res.json()
+}

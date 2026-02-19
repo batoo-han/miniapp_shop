@@ -125,6 +125,11 @@ class SettingsResponse(BaseModel):
     storage_allowed_attachment_types: str
     log_level: str
     log_max_bytes_mb: float
+    # Настройки мини-приложения магазина
+    miniapp_shop_name: str
+    miniapp_section_title: str
+    miniapp_footer_text: str
+    miniapp_background_color: str
 
     # Только для чтения (секреты и системные)
     api_port: int
@@ -141,3 +146,18 @@ class SettingsUpdate(BaseModel):
     storage_allowed_attachment_types: str | None = None
     log_level: str | None = None
     log_max_bytes_mb: float | None = None
+    # Настройки мини-приложения магазина
+    miniapp_shop_name: str | None = None
+    miniapp_section_title: str | None = None
+    miniapp_footer_text: str | None = None
+    miniapp_background_color: str | None = None
+
+
+class MiniappSettingsResponse(BaseModel):
+    """Публичные настройки для мини-приложения (без секретов)."""
+
+    shop_name: str
+    section_title: str
+    footer_text: str
+    background_color: str
+    contact_telegram_link: str

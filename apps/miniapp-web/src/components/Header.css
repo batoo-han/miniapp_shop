@@ -1,0 +1,11 @@
+.miniapp-header {
+  padding: 16px;
+  background: transparent;
+}
+
+.miniapp-header__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--tg-theme-text-color);
+}

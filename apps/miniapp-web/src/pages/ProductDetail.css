@@ -1,4 +1,7 @@
 .product-detail {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   padding: 16px;
   padding-bottom: 80px;
   min-height: 100vh;
@@ -127,10 +130,8 @@
 }
 
 .product-detail__contact {
-  position: fixed;
-  bottom: 16px;
-  left: 16px;
-  right: 16px;
+  margin-top: 24px;
+  margin-bottom: 16px;
   padding: 14px;
   background: var(--tg-theme-button-color);
   color: var(--tg-theme-button-text-color);

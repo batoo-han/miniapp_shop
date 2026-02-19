@@ -1,0 +1,11 @@
+.miniapp-footer {
+  padding: 16px;
+  text-align: center;
+  margin-top: auto;
+}
+
+.miniapp-footer__text {
+  font-size: 0.875rem;
+  color: var(--tg-theme-hint-color);
+  margin: 0;
+}

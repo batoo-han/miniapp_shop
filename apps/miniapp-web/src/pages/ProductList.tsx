@@ -4,9 +4,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchProducts, getFileUrl, type ProductListItem } from '../api'
+import { useSettings } from '../contexts/SettingsContext'
+import { Header } from '../components/Header'
+import { Footer } from '../components/Footer'
 import './ProductList.css'
 
 export function ProductList() {
+  const settings = useSettings()
   const [items, setItems] = useState<ProductListItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -32,7 +36,8 @@ export function ProductList() {
 
   return (
     <div className="product-list">
-      <h1 className="product-list__title">Витрина</h1>
+      <Header shopName={settings.shop_name} />
+      <h1 className="product-list__title">{settings.section_title}</h1>
 
       {items.length === 0 ? (
         <p className="product-list__empty">Нет товаров</p>
@@ -86,6 +91,7 @@ export function ProductList() {
           )}
         </>
       )}
+      <Footer footerText={settings.footer_text} />
     </div>
   )
 }

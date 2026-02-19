@@ -1,6 +1,8 @@
 .product-list {
   padding: 16px;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-list__title {

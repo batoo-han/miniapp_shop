@@ -313,6 +313,10 @@ export type Settings = {
   storage_allowed_attachment_types: string
   log_level: string
   log_max_bytes_mb: number
+  miniapp_shop_name: string
+  miniapp_section_title: string
+  miniapp_footer_text: string
+  miniapp_background_color: string
   api_port: number
   cors_origins: string
   storage_path: string
@@ -325,6 +329,10 @@ export type SettingsUpdate = {
   storage_allowed_attachment_types?: string
   log_level?: string
   log_max_bytes_mb?: number
+  miniapp_shop_name?: string
+  miniapp_section_title?: string
+  miniapp_footer_text?: string
+  miniapp_background_color?: string
 }
 
 export async function getSettings(): Promise<Settings> {
