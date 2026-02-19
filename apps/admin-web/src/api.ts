@@ -383,8 +383,11 @@ export async function uploadBackgroundImage(file: File): Promise<{ id: string; u
     body: formData,
   })
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: 'Failed to upload background image' }))
-    throw new Error(error.detail || 'Failed to upload background image')
+    const error = await res.json().catch(() => ({ detail: 'Не удалось загрузить фоновое изображение' }))
+    const message = Array.isArray(error.detail)
+      ? error.detail.map((d: { msg?: string }) => d.msg || String(d)).join('. ')
+      : (error.detail ?? 'Не удалось загрузить фоновое изображение')
+    throw new Error(message)
   }
   return res.json()
 }

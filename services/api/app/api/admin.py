@@ -620,10 +620,17 @@ async def admin_upload_background_image(
 ):
     """Загрузка фонового изображения для мини-приложения."""
     if file.content_type not in ALLOWED_IMAGE:
-        raise HTTPException(status_code=400, detail=f"Allowed types: {ALLOWED_IMAGE}")
+        logging.getLogger(__name__).warning("Background image rejected: content_type=%s", file.content_type)
+        raise HTTPException(
+            status_code=400,
+            detail="Допустимые форматы: JPEG, PNG, WebP. Загруженный файл имеет другой тип.",
+        )
     content = await file.read()
     if len(content) > MAX_FILE_MB * 1024 * 1024:
-        raise HTTPException(status_code=400, detail=f"Max size {MAX_FILE_MB}MB")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Максимальный размер файла: {MAX_FILE_MB} МБ.",
+        )
 
     # Удаляем старое изображение, если есть
     s = get_settings()
