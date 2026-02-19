@@ -3,13 +3,13 @@
   flex-direction: column;
   min-height: 100vh;
   padding: 16px;
-  padding-top: 100px;
+  padding-top: 60px;
   padding-bottom: 80px;
 }
 
 .product-detail__back {
   position: fixed;
-  top: 60px;
+  top: 16px;
   left: 16px;
   right: 16px;
   z-index: 10;
@@ -18,7 +18,7 @@
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
   border-radius: 8px;
-  color: var(--tg-theme-link-color);
+  color: var(--miniapp-text-color);
   text-decoration: none;
   font-size: 0.9rem;
 }
@@ -26,6 +26,7 @@
 .product-detail__title {
   font-size: 1.25rem;
   margin-bottom: 16px;
+  color: var(--miniapp-heading-color);
 }
 
 .product-detail__gallery {
@@ -34,7 +35,7 @@
 
 .product-detail__gallery-main {
   aspect-ratio: 1;
-  background: var(--tg-theme-secondary-bg-color);
+  background: var(--miniapp-card-bg-color);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -61,7 +62,7 @@
   border-radius: 8px;
   overflow: hidden;
   padding: 0;
-  background: var(--tg-theme-secondary-bg-color);
+  background: var(--miniapp-card-bg-color);
 }
 
 .product-detail__thumb.active {
@@ -77,7 +78,7 @@
 .product-detail__price {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--tg-theme-link-color);
+  color: var(--miniapp-price-color);
   margin-bottom: 20px;
 }
 
@@ -88,11 +89,13 @@
 .product-detail__section h3 {
   font-size: 1rem;
   margin-bottom: 8px;
+  color: var(--miniapp-heading-color);
 }
 
 .product-detail__desc {
   white-space: pre-wrap;
   line-height: 1.5;
+  color: var(--miniapp-text-color);
 }
 
 .product-detail__specs {
@@ -105,15 +108,16 @@
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid var(--tg-theme-secondary-bg-color);
+  border-bottom: 1px solid var(--miniapp-card-bg-color);
 }
 
 .product-detail__spec-name {
-  color: var(--tg-theme-hint-color);
+  color: var(--miniapp-hint-color);
 }
 
 .product-detail__spec-value {
   font-weight: 500;
+  color: var(--miniapp-text-color);
 }
 
 .product-detail__attachments {
@@ -131,7 +135,8 @@
   width: 100%;
   padding: 12px;
   text-align: left;
-  background: var(--tg-theme-secondary-bg-color);
+  background: var(--miniapp-card-bg-color);
+  color: var(--miniapp-text-color);
   border: none;
   border-radius: 8px;
   font-size: 1rem;

@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchProducts, getFileUrl, type ProductListItem } from '../api'
 import { useSettings } from '../contexts/SettingsContext'
-import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import './ProductList.css'
 
@@ -36,7 +35,6 @@ export function ProductList() {
 
   return (
     <div className="product-list">
-      <Header shopName={settings.shop_name} />
       <h1 className="product-list__title">{settings.section_title}</h1>
 
       {items.length === 0 ? (

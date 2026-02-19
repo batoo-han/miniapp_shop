@@ -2,8 +2,9 @@
  * Страница настроек системы
  */
 import { useEffect, useState } from 'react'
-import { getSettings, updateSettings, type Settings, type SettingsUpdate } from '../api'
+import { getSettings, updateSettings, uploadBackgroundImage, deleteBackgroundImage, type Settings, type SettingsUpdate } from '../api'
 import { useToast } from '../components/Toast'
+import { FileUpload } from '../components/FileUpload'
 import './Settings.css'
 
 export function Settings() {
@@ -28,11 +29,15 @@ export function Settings() {
         storage_allowed_attachment_types: data.storage_allowed_attachment_types,
         log_level: data.log_level,
         log_max_bytes_mb: data.log_max_bytes_mb,
-        miniapp_shop_name: data.miniapp_shop_name,
         miniapp_section_title: data.miniapp_section_title,
         miniapp_footer_text: data.miniapp_footer_text,
         miniapp_background_color: data.miniapp_background_color,
         miniapp_background_image: data.miniapp_background_image,
+        miniapp_text_color: data.miniapp_text_color,
+        miniapp_heading_color: data.miniapp_heading_color,
+        miniapp_price_color: data.miniapp_price_color,
+        miniapp_hint_color: data.miniapp_hint_color,
+        miniapp_card_bg_color: data.miniapp_card_bg_color,
       })
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Ошибка загрузки настроек', 'error')
@@ -148,20 +153,6 @@ export function Settings() {
           <h2>Мини-приложение магазина</h2>
           <div className="form-group">
             <label>
-              Название магазина
-              <input
-                type="text"
-                value={formData.miniapp_shop_name || ''}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_shop_name: e.target.value }))
-                }
-                placeholder="Test Shop"
-              />
-              <small>Отображается в верхней части мини-приложения</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
               Заголовок секции товаров
               <input
                 type="text"
@@ -203,16 +194,118 @@ export function Settings() {
           </div>
           <div className="form-group">
             <label>
-              Изображение фона страницы (URL)
+              Изображение фона страницы
+              {settings.miniapp_background_image ? (
+                <div style={{ marginTop: '8px', marginBottom: '8px' }}>
+                  <img
+                    src={settings.miniapp_background_image.startsWith('http') ? settings.miniapp_background_image : window.location.origin + settings.miniapp_background_image}
+                    alt="Текущее фоновое изображение"
+                    style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await deleteBackgroundImage()
+                        showToast('Фоновое изображение удалено', 'success')
+                        loadSettings()
+                      } catch (err) {
+                        showToast(err instanceof Error ? err.message : 'Ошибка удаления изображения', 'error')
+                      }
+                    }}
+                    style={{ marginLeft: '8px', padding: '4px 8px', fontSize: '0.875rem' }}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              ) : null}
+              <FileUpload
+                accept="image/jpeg,image/png,image/webp"
+                multiple={false}
+                onFilesSelected={async (files) => {
+                  if (files.length === 0) return
+                  try {
+                    setSaving(true)
+                    const result = await uploadBackgroundImage(files[0])
+                    showToast('Фоновое изображение загружено', 'success')
+                    loadSettings()
+                  } catch (err) {
+                    showToast(err instanceof Error ? err.message : 'Ошибка загрузки изображения', 'error')
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                disabled={saving}
+                label="Выберите изображение для фона"
+                description="или перетащите его сюда"
+              />
+              <small>Изображение для фона. Если задано, будет использоваться вместо цвета фона.</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет основного текста
+              <input
+                type="color"
+                value={formData.miniapp_text_color || '#ffffff'}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_text_color: e.target.value }))
+                }
+              />
+              <small>Цвет основного текста на странице</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет заголовков
+              <input
+                type="color"
+                value={formData.miniapp_heading_color || '#ffffff'}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_heading_color: e.target.value }))
+                }
+              />
+              <small>Цвет заголовков секций и названий товаров</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет цен
+              <input
+                type="color"
+                value={formData.miniapp_price_color || '#00d4ff'}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_price_color: e.target.value }))
+                }
+              />
+              <small>Цвет отображения цен товаров</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет подсказок и вторичного текста
+              <input
+                type="color"
+                value={formData.miniapp_hint_color || '#cccccc'}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_hint_color: e.target.value }))
+                }
+              />
+              <small>Цвет описаний, подсказок и вторичного текста</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Цвет фона карточек товаров
               <input
                 type="text"
-                value={formData.miniapp_background_image || ''}
+                value={formData.miniapp_card_bg_color || 'rgba(255, 255, 255, 0.1)'}
                 onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_background_image: e.target.value }))
+                  setFormData((d) => ({ ...d, miniapp_card_bg_color: e.target.value }))
                 }
-                placeholder="https://example.com/bg.jpg или /api/files/..."
+                placeholder="rgba(255, 255, 255, 0.1) или #ffffff"
               />
-              <small>URL изображения для фона. Если задано, будет использоваться вместо цвета.</small>
+              <small>Цвет фона карточек товаров (можно использовать rgba для прозрачности, например: rgba(255, 255, 255, 0.1))</small>
             </label>
           </div>
         </section>

@@ -88,11 +88,15 @@ export function getFileUrl(urlPath: string): string {
 }
 
 export type MiniappSettings = {
-  shop_name: string
   section_title: string
   footer_text: string
   background_color: string
   background_image: string
+  text_color: string
+  heading_color: string
+  price_color: string
+  hint_color: string
+  card_bg_color: string
   contact_telegram_link: string
 }
 
@@ -101,11 +105,15 @@ export async function fetchMiniappSettings(): Promise<MiniappSettings> {
   if (!res.ok) {
     // Fallback к значениям по умолчанию при ошибке
     return {
-      shop_name: 'Test Shop',
       section_title: 'Витрина',
       footer_text: '@TestoSmaipl_bot',
       background_color: '#000000',
       background_image: '',
+      text_color: '#ffffff',
+      heading_color: '#ffffff',
+      price_color: '#00d4ff',
+      hint_color: '#cccccc',
+      card_bg_color: 'rgba(255, 255, 255, 0.1)',
       contact_telegram_link: 'https://t.me/support',
     }
   }

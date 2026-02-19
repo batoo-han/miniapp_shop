@@ -612,6 +612,198 @@ async def admin_delete_file(
     raise HTTPException(status_code=404, detail="File not found")
 
 
+# --- Settings Background Image ---
+@router.post("/settings/background-image")
+async def admin_upload_background_image(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Загрузка фонового изображения для мини-приложения."""
+    if file.content_type not in ALLOWED_IMAGE:
+        raise HTTPException(status_code=400, detail=f"Allowed types: {ALLOWED_IMAGE}")
+    content = await file.read()
+    if len(content) > MAX_FILE_MB * 1024 * 1024:
+        raise HTTPException(status_code=400, detail=f"Max size {MAX_FILE_MB}MB")
+
+    # Удаляем старое изображение, если есть
+    s = get_settings()
+    if s.miniapp_background_image and s.miniapp_background_image.startswith("/api/files/"):
+        # Извлекаем UUID из пути /api/files/{uuid}
+        try:
+            old_file_id = UUID(s.miniapp_background_image.replace("/api/files/", ""))
+            # Удаляем старый файл
+            from app.models.product import ProductImage
+            stmt = select(ProductImage).where(ProductImage.id == old_file_id)
+            result = await db.execute(stmt)
+            old_img = result.scalars().first()
+            if old_img:
+                storage = get_storage()
+                await storage.delete(old_img.file_path)
+                await db.delete(old_img)
+                await db.flush()
+        except (ValueError, Exception):
+            # Игнорируем ошибки при удалении старого файла
+            pass
+
+    # Сохраняем новое изображение напрямую в хранилище
+    img_id = uuid.uuid4()
+    ext = Path(file.filename or "img").suffix or ".jpg"
+    rel_path = f"settings/background_{img_id}{ext}"
+
+    storage = get_storage()
+    await storage.save(rel_path, io.BytesIO(content), file.content_type)
+    
+    # Создаём запись ProductImage для совместимости с системой файлов
+    # Используем фиктивный UUID для product_id (можно создать системный продукт или использовать существующий)
+    # Для простоты создадим запись с фиктивным product_id, но это не идеально
+    # Альтернатива: хранить только путь в настройках и отдавать файл через отдельный endpoint
+    # Пока используем подход с ProductImage для совместимости с /api/files/{id}
+    
+    # Создаём или находим системный продукт для фоновых изображений
+    from app.models.product import Product
+    sys_product_slug = "__system_background__"
+    stmt = select(Product).where(Product.slug == sys_product_slug)
+    result = await db.execute(stmt)
+    sys_product = result.scalars().first()
+    
+    if not sys_product:
+        # Создаём системный продукт
+        sys_product = Product(
+            slug=sys_product_slug,
+            title="System Background Image",
+            is_published=False,
+        )
+        db.add(sys_product)
+        await db.flush()
+    
+    from app.models.product import ProductImage
+    img = ProductImage(
+        id=img_id,
+        product_id=sys_product.id,
+        file_path=rel_path,
+        alt="Background image",
+        sort_order=0,
+        mime=file.content_type,
+        size_bytes=len(content),
+    )
+    db.add(img)
+    await db.flush()
+
+    # Обновляем настройку в .env
+    env_path = Path(".env")
+    if not env_path.exists():
+        current = Path(__file__).parent.parent.parent.parent
+        env_path = current / ".env"
+        if not env_path.exists():
+            env_path = current.parent / ".env"
+        if not env_path.exists():
+            raise HTTPException(status_code=500, detail=".env file not found")
+
+    env_lines = []
+    if env_path.exists():
+        with open(env_path, "r", encoding="utf-8") as f:
+            env_lines = f.readlines()
+
+    new_lines = []
+    updated = False
+    for line in env_lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            new_lines.append(line)
+            continue
+
+        parts = stripped.split("=", 1)
+        if len(parts) != 2:
+            new_lines.append(line)
+            continue
+
+        key = parts[0].strip().upper()
+        if key == "MINIAPP_BACKGROUND_IMAGE":
+            new_lines.append(f'MINIAPP_BACKGROUND_IMAGE="/api/files/{img_id}"\n')
+            updated = True
+        else:
+            new_lines.append(line)
+
+    if not updated:
+        new_lines.append(f'MINIAPP_BACKGROUND_IMAGE="/api/files/{img_id}"\n')
+
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        get_settings.cache_clear()
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        logging.getLogger(__name__).exception("Failed to update .env file")
+        raise HTTPException(status_code=500, detail=f"Failed to update settings: {str(e)}")
+
+    return {"id": str(img_id), "url": f"/api/files/{img_id}"}
+
+
+@router.delete("/settings/background-image")
+async def admin_delete_background_image(db: AsyncSession = Depends(get_db)):
+    """Удаление фонового изображения для мини-приложения."""
+    s = get_settings()
+    if not s.miniapp_background_image or not s.miniapp_background_image.startswith("/api/files/"):
+        raise HTTPException(status_code=404, detail="Background image not found")
+
+    try:
+        file_id = UUID(s.miniapp_background_image.replace("/api/files/", ""))
+        from app.models.product import ProductImage
+        stmt = select(ProductImage).where(ProductImage.id == file_id)
+        result = await db.execute(stmt)
+        img = result.scalars().first()
+        if img:
+            storage = get_storage()
+            await storage.delete(img.file_path)
+            await db.delete(img)
+            await db.flush()
+
+        # Очищаем настройку в .env
+        env_path = Path(".env")
+        if not env_path.exists():
+            current = Path(__file__).parent.parent.parent.parent
+            env_path = current / ".env"
+            if not env_path.exists():
+                env_path = current.parent / ".env"
+            if not env_path.exists():
+                raise HTTPException(status_code=500, detail=".env file not found")
+
+        env_lines = []
+        if env_path.exists():
+            with open(env_path, "r", encoding="utf-8") as f:
+                env_lines = f.readlines()
+
+        new_lines = []
+        for line in env_lines:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                new_lines.append(line)
+                continue
+
+            parts = stripped.split("=", 1)
+            if len(parts) != 2:
+                new_lines.append(line)
+                continue
+
+            key = parts[0].strip().upper()
+            if key == "MINIAPP_BACKGROUND_IMAGE":
+                new_lines.append('MINIAPP_BACKGROUND_IMAGE=""\n')
+            else:
+                new_lines.append(line)
+
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+        get_settings.cache_clear()
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        logging.getLogger(__name__).exception("Failed to delete background image")
+        raise HTTPException(status_code=500, detail=f"Failed to delete background image: {str(e)}")
+
+    return {"deleted": True}
+
+
 # --- Settings ---
 @router.get("/settings", response_model=SettingsResponse)
 async def admin_get_settings():
@@ -624,11 +816,15 @@ async def admin_get_settings():
         storage_allowed_attachment_types=s.storage_allowed_attachment_types,
         log_level=s.log_level,
         log_max_bytes_mb=s.log_max_bytes_mb,
-        miniapp_shop_name=s.miniapp_shop_name,
         miniapp_section_title=s.miniapp_section_title,
         miniapp_footer_text=s.miniapp_footer_text,
         miniapp_background_color=s.miniapp_background_color,
         miniapp_background_image=s.miniapp_background_image,
+        miniapp_text_color=s.miniapp_text_color,
+        miniapp_heading_color=s.miniapp_heading_color,
+        miniapp_price_color=s.miniapp_price_color,
+        miniapp_hint_color=s.miniapp_hint_color,
+        miniapp_card_bg_color=s.miniapp_card_bg_color,
         api_port=s.api_port,
         cors_origins=s.cors_origins,
         storage_path=s.storage_path,
@@ -735,10 +931,10 @@ async def admin_update_settings(data: SettingsUpdate):
             storage_allowed_attachment_types=s.storage_allowed_attachment_types,
             log_level=s.log_level,
             log_max_bytes_mb=s.log_max_bytes_mb,
-            miniapp_shop_name=s.miniapp_shop_name,
             miniapp_section_title=s.miniapp_section_title,
             miniapp_footer_text=s.miniapp_footer_text,
             miniapp_background_color=s.miniapp_background_color,
+            miniapp_background_image=s.miniapp_background_image,
             api_port=s.api_port,
             cors_origins=s.cors_origins,
             storage_path=s.storage_path,

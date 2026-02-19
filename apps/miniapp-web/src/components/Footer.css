@@ -6,6 +6,6 @@
 
 .miniapp-footer__text {
   font-size: 0.875rem;
-  color: var(--tg-theme-hint-color);
+  color: var(--miniapp-hint-color);
   margin: 0;
 }

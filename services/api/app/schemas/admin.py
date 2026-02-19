@@ -126,11 +126,15 @@ class SettingsResponse(BaseModel):
     log_level: str
     log_max_bytes_mb: float
     # Настройки мини-приложения магазина
-    miniapp_shop_name: str
     miniapp_section_title: str
     miniapp_footer_text: str
     miniapp_background_color: str
     miniapp_background_image: str
+    miniapp_text_color: str
+    miniapp_heading_color: str
+    miniapp_price_color: str
+    miniapp_hint_color: str
+    miniapp_card_bg_color: str
 
     # Только для чтения (секреты и системные)
     api_port: int
@@ -148,19 +152,27 @@ class SettingsUpdate(BaseModel):
     log_level: str | None = None
     log_max_bytes_mb: float | None = None
     # Настройки мини-приложения магазина
-    miniapp_shop_name: str | None = None
     miniapp_section_title: str | None = None
     miniapp_footer_text: str | None = None
     miniapp_background_color: str | None = None
     miniapp_background_image: str | None = None
+    miniapp_text_color: str | None = None
+    miniapp_heading_color: str | None = None
+    miniapp_price_color: str | None = None
+    miniapp_hint_color: str | None = None
+    miniapp_card_bg_color: str | None = None
 
 
 class MiniappSettingsResponse(BaseModel):
     """Публичные настройки для мини-приложения (без секретов)."""
 
-    shop_name: str
     section_title: str
     footer_text: str
     background_color: str
     background_image: str
+    text_color: str
+    heading_color: str
+    price_color: str
+    hint_color: str
+    card_bg_color: str
     contact_telegram_link: str

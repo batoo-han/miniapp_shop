@@ -313,11 +313,15 @@ export type Settings = {
   storage_allowed_attachment_types: string
   log_level: string
   log_max_bytes_mb: number
-  miniapp_shop_name: string
   miniapp_section_title: string
   miniapp_footer_text: string
   miniapp_background_color: string
   miniapp_background_image: string
+  miniapp_text_color: string
+  miniapp_heading_color: string
+  miniapp_price_color: string
+  miniapp_hint_color: string
+  miniapp_card_bg_color: string
   api_port: number
   cors_origins: string
   storage_path: string
@@ -330,11 +334,15 @@ export type SettingsUpdate = {
   storage_allowed_attachment_types?: string
   log_level?: string
   log_max_bytes_mb?: number
-  miniapp_shop_name?: string
   miniapp_section_title?: string
   miniapp_footer_text?: string
   miniapp_background_color?: string
   miniapp_background_image?: string
+  miniapp_text_color?: string
+  miniapp_heading_color?: string
+  miniapp_price_color?: string
+  miniapp_hint_color?: string
+  miniapp_card_bg_color?: string
 }
 
 export async function getSettings(): Promise<Settings> {
@@ -357,4 +365,37 @@ export async function updateSettings(data: SettingsUpdate): Promise<Settings> {
     throw new Error(error.detail || 'Failed to update settings')
   }
   return res.json()
+}
+
+export async function uploadBackgroundImage(file: File): Promise<{ id: string; url: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  const token = getToken()
+  const headers: HeadersInit = {}
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+  
+  const res = await fetchWithAuth(`${API_BASE}/admin/settings/background-image`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: 'Failed to upload background image' }))
+    throw new Error(error.detail || 'Failed to upload background image')
+  }
+  return res.json()
+}
+
+export async function deleteBackgroundImage(): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/admin/settings/background-image`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: 'Failed to delete background image' }))
+    throw new Error(error.detail || 'Failed to delete background image')
+  }
 }

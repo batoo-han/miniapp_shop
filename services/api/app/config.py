@@ -36,11 +36,16 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_max_bytes_mb: float = 100.0
     # Настройки мини-приложения магазина
-    miniapp_shop_name: str = "Test Shop"
     miniapp_section_title: str = "Витрина"
     miniapp_footer_text: str = "@TestoSmaipl_bot"
     miniapp_background_color: str = "#000000"
     miniapp_background_image: str = ""  # URL или путь к изображению фона
+    # Цвета текста для читаемости на фоне
+    miniapp_text_color: str = "#ffffff"  # Основной цвет текста
+    miniapp_heading_color: str = "#ffffff"  # Цвет заголовков
+    miniapp_price_color: str = "#00d4ff"  # Цвет цен
+    miniapp_hint_color: str = "#cccccc"  # Цвет подсказок/вторичного текста
+    miniapp_card_bg_color: str = "rgba(255, 255, 255, 0.1)"  # Цвет фона карточек товаров
 
     @property
     def cors_origins_list(self) -> List[str]:

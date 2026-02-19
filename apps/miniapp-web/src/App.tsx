@@ -26,7 +26,7 @@ function AppContent() {
     const body = document.body
     
     if (settings.background_image && settings.background_image.trim()) {
-      // Используем изображение фона
+      // Используем изображение фона (цвет не применяем)
       const imageUrl = settings.background_image.startsWith('http') 
         ? settings.background_image 
         : (window.location.origin + settings.background_image)
@@ -35,17 +35,17 @@ function AppContent() {
       body.style.backgroundSize = 'cover'
       body.style.backgroundPosition = 'center'
       body.style.backgroundRepeat = 'no-repeat'
-      body.style.backgroundColor = settings.background_color // Fallback цвет
+      body.style.backgroundColor = 'transparent'
       
       if (root) {
         root.style.backgroundImage = `url(${imageUrl})`
         root.style.backgroundSize = 'cover'
         root.style.backgroundPosition = 'center'
         root.style.backgroundRepeat = 'no-repeat'
-        root.style.backgroundColor = settings.background_color
+        root.style.backgroundColor = 'transparent'
       }
     } else {
-      // Используем только цвет
+      // Используем только цвет (изображения нет)
       body.style.backgroundImage = 'none'
       body.style.backgroundColor = settings.background_color
       
@@ -56,7 +56,20 @@ function AppContent() {
     }
     
     document.documentElement.style.setProperty('--miniapp-bg-color', settings.background_color)
-  }, [settings.background_color, settings.background_image])
+    
+    // Применяем цвета текста из настроек
+    document.documentElement.style.setProperty('--miniapp-text-color', settings.text_color)
+    document.documentElement.style.setProperty('--miniapp-heading-color', settings.heading_color)
+    document.documentElement.style.setProperty('--miniapp-price-color', settings.price_color)
+    document.documentElement.style.setProperty('--miniapp-hint-color', settings.hint_color)
+    document.documentElement.style.setProperty('--miniapp-card-bg-color', settings.card_bg_color)
+    
+    // Применяем цвета к body и root для глобального использования
+    body.style.color = settings.text_color
+    if (root) {
+      root.style.color = settings.text_color
+    }
+  }, [settings.background_color, settings.background_image, settings.text_color, settings.heading_color, settings.price_color, settings.hint_color, settings.card_bg_color])
 
   // В проде Mini App живёт по /miniapp/. В dev (vite) — обычно на /.
   const basename =

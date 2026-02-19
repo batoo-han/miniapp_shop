@@ -6,7 +6,6 @@ import { useParams, Link } from 'react-router-dom'
 import { fetchProduct, getFileUrl, trackProductView, type ProductDetail } from '../api'
 import { downloadFile, openTelegramLink } from '../useTelegram'
 import { useSettings } from '../contexts/SettingsContext'
-import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
 import './ProductDetail.css'
 
@@ -45,7 +44,6 @@ export function ProductDetail() {
 
   return (
     <div className="product-detail">
-      <Header shopName={settings.shop_name} />
       <Link to="/" className="product-detail__back">
         ← Назад к списку
       </Link>
