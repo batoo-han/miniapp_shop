@@ -130,6 +130,7 @@ class SettingsResponse(BaseModel):
     miniapp_section_title: str
     miniapp_footer_text: str
     miniapp_background_color: str
+    miniapp_background_image: str
 
     # Только для чтения (секреты и системные)
     api_port: int
@@ -151,6 +152,7 @@ class SettingsUpdate(BaseModel):
     miniapp_section_title: str | None = None
     miniapp_footer_text: str | None = None
     miniapp_background_color: str | None = None
+    miniapp_background_image: str | None = None
 
 
 class MiniappSettingsResponse(BaseModel):
@@ -160,4 +162,5 @@ class MiniappSettingsResponse(BaseModel):
     section_title: str
     footer_text: str
     background_color: str
+    background_image: str
     contact_telegram_link: str

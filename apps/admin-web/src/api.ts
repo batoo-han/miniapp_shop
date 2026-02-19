@@ -317,6 +317,7 @@ export type Settings = {
   miniapp_section_title: string
   miniapp_footer_text: string
   miniapp_background_color: string
+  miniapp_background_image: string
   api_port: number
   cors_origins: string
   storage_path: string
@@ -333,6 +334,7 @@ export type SettingsUpdate = {
   miniapp_section_title?: string
   miniapp_footer_text?: string
   miniapp_background_color?: string
+  miniapp_background_image?: string
 }
 
 export async function getSettings(): Promise<Settings> {

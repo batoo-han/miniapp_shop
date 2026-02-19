@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     miniapp_section_title: str = "Витрина"
     miniapp_footer_text: str = "@TestoSmaipl_bot"
     miniapp_background_color: str = "#000000"
+    miniapp_background_image: str = ""  # URL или путь к изображению фона
 
     @property
     def cors_origins_list(self) -> List[str]:

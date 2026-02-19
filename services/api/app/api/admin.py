@@ -628,6 +628,7 @@ async def admin_get_settings():
         miniapp_section_title=s.miniapp_section_title,
         miniapp_footer_text=s.miniapp_footer_text,
         miniapp_background_color=s.miniapp_background_color,
+        miniapp_background_image=s.miniapp_background_image,
         api_port=s.api_port,
         cors_origins=s.cors_origins,
         storage_path=s.storage_path,

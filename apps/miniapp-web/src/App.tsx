@@ -20,15 +20,43 @@ import { useEffect } from 'react'
 function AppContent() {
   const settings = useSettings()
 
-  // Применяем цвет фона из настроек
+  // Применяем фон из настроек (изображение или цвет)
   useEffect(() => {
-    document.documentElement.style.setProperty('--miniapp-bg-color', settings.background_color)
-    document.body.style.backgroundColor = settings.background_color
     const root = document.getElementById('root')
-    if (root) {
-      root.style.backgroundColor = settings.background_color
+    const body = document.body
+    
+    if (settings.background_image && settings.background_image.trim()) {
+      // Используем изображение фона
+      const imageUrl = settings.background_image.startsWith('http') 
+        ? settings.background_image 
+        : (window.location.origin + settings.background_image)
+      
+      body.style.backgroundImage = `url(${imageUrl})`
+      body.style.backgroundSize = 'cover'
+      body.style.backgroundPosition = 'center'
+      body.style.backgroundRepeat = 'no-repeat'
+      body.style.backgroundColor = settings.background_color // Fallback цвет
+      
+      if (root) {
+        root.style.backgroundImage = `url(${imageUrl})`
+        root.style.backgroundSize = 'cover'
+        root.style.backgroundPosition = 'center'
+        root.style.backgroundRepeat = 'no-repeat'
+        root.style.backgroundColor = settings.background_color
+      }
+    } else {
+      // Используем только цвет
+      body.style.backgroundImage = 'none'
+      body.style.backgroundColor = settings.background_color
+      
+      if (root) {
+        root.style.backgroundImage = 'none'
+        root.style.backgroundColor = settings.background_color
+      }
     }
-  }, [settings.background_color])
+    
+    document.documentElement.style.setProperty('--miniapp-bg-color', settings.background_color)
+  }, [settings.background_color, settings.background_image])
 
   // В проде Mini App живёт по /miniapp/. В dev (vite) — обычно на /.
   const basename =

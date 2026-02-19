@@ -92,6 +92,7 @@ export type MiniappSettings = {
   section_title: string
   footer_text: string
   background_color: string
+  background_image: string
   contact_telegram_link: string
 }
 
@@ -104,6 +105,7 @@ export async function fetchMiniappSettings(): Promise<MiniappSettings> {
       section_title: 'Витрина',
       footer_text: '@TestoSmaipl_bot',
       background_color: '#000000',
+      background_image: '',
       contact_telegram_link: 'https://t.me/support',
     }
   }

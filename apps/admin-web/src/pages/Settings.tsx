@@ -32,6 +32,7 @@ export function Settings() {
         miniapp_section_title: data.miniapp_section_title,
         miniapp_footer_text: data.miniapp_footer_text,
         miniapp_background_color: data.miniapp_background_color,
+        miniapp_background_image: data.miniapp_background_image,
       })
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Ошибка загрузки настроек', 'error')
@@ -197,7 +198,21 @@ export function Settings() {
                   setFormData((d) => ({ ...d, miniapp_background_color: e.target.value }))
                 }
               />
-              <small>Цвет фона страницы мини-приложения (HEX формат)</small>
+              <small>Цвет фона страницы мини-приложения (HEX формат). Используется, если не задано изображение.</small>
+            </label>
+          </div>
+          <div className="form-group">
+            <label>
+              Изображение фона страницы (URL)
+              <input
+                type="text"
+                value={formData.miniapp_background_image || ''}
+                onChange={(e) =>
+                  setFormData((d) => ({ ...d, miniapp_background_image: e.target.value }))
+                }
+                placeholder="https://example.com/bg.jpg или /api/files/..."
+              />
+              <small>URL изображения для фона. Если задано, будет использоваться вместо цвета.</small>
             </label>
           </div>
         </section>

@@ -18,5 +18,6 @@ async def get_miniapp_settings():
         section_title=s.miniapp_section_title,
         footer_text=s.miniapp_footer_text,
         background_color=s.miniapp_background_color,
+        background_image=s.miniapp_background_image,
         contact_telegram_link=s.contact_telegram_link,
     )
