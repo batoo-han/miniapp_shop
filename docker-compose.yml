@@ -57,7 +57,10 @@ services:
       dockerfile: infra/Dockerfile.web
       args:
         VITE_API_URL: ${VITE_API_URL:-/api}
-        VITE_CONTACT_TELEGRAM_LINK: ${VITE_CONTACT_TELEGRAM_LINK:-}
+        # Mini App использует только VITE_* переменные (вшиваются в сборку).
+        # Чтобы не дублировать настройки, берём контакт для кнопки "Связаться"
+        # из CONTACT_TELEGRAM_LINK (корневой .env) и прокидываем как VITE_CONTACT_TELEGRAM_LINK.
+        VITE_CONTACT_TELEGRAM_LINK: ${CONTACT_TELEGRAM_LINK:-}
     env_file:
       - .env
     ports:
