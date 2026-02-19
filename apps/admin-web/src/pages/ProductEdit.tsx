@@ -101,7 +101,7 @@ export function ProductEdit() {
         price_amount: p.price_amount != null ? Number(p.price_amount) : null,
         price_currency: (p.price_currency as string) ?? 'RUB',
         is_published: Boolean(p.is_published),
-        sort_order: Number(p.sort_order) ?? 0,
+        sort_order: Number(p.sort_order ?? 0),
         images: ((p.images as ImageItem[]) ?? []).map((i) => ({
           ...i,
           sort_order: i.sort_order ?? 0,
@@ -174,7 +174,7 @@ export function ProductEdit() {
           price_amount: loadedProduct.price_amount != null ? Number(loadedProduct.price_amount) : null,
           price_currency: (loadedProduct.price_currency as string) ?? 'RUB',
           is_published: Boolean(loadedProduct.is_published),
-          sort_order: Number(loadedProduct.sort_order) ?? 0,
+          sort_order: Number(loadedProduct.sort_order ?? 0),
           images: ((loadedProduct.images as ImageItem[]) ?? []).map((i) => ({
             ...i,
             sort_order: i.sort_order ?? 0,
