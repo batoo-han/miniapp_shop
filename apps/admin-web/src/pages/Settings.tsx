@@ -202,66 +202,6 @@ export function Settings() {
           </div>
         </section>
 
-        {/* Настройки мини-приложения магазина */}
-        <section className="settings-section">
-          <h2>Мини-приложение магазина</h2>
-          <div className="form-group">
-            <label>
-              Название магазина
-              <input
-                type="text"
-                value={formData.miniapp_shop_name || ''}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_shop_name: e.target.value }))
-                }
-                placeholder="Test Shop"
-              />
-              <small>Отображается в верхней части мини-приложения</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Заголовок секции товаров
-              <input
-                type="text"
-                value={formData.miniapp_section_title || ''}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_section_title: e.target.value }))
-                }
-                placeholder="Витрина"
-              />
-              <small>Заголовок над списком товаров</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Текст в подвале
-              <input
-                type="text"
-                value={formData.miniapp_footer_text || ''}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_footer_text: e.target.value }))
-                }
-                placeholder="@TestoSmaipl_bot"
-              />
-              <small>Текст, отображаемый в нижней части мини-приложения</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Цвет фона страницы
-              <input
-                type="color"
-                value={formData.miniapp_background_color || '#000000'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_background_color: e.target.value }))
-                }
-              />
-              <small>Цвет фона страницы мини-приложения (HEX формат)</small>
-            </label>
-          </div>
-        </section>
-
         {/* Настройки логирования */}
         <section className="settings-section">
           <h2>Логирование</h2>
