@@ -162,3 +162,11 @@ API ожидает `/api/products/` (с завершающим слэшем). Ф
 
 - API запускается с флагом `--proxy-headers` (см. `infra/Dockerfile.api`), чтобы учитывать `X-Forwarded-Proto`.
 - Внутренний nginx передаёт `X-Forwarded-Proto` от внешнего прокси в backend (см. `infra/nginx.conf`, `$forwarded_proto`).
+
+### 9.4 Загрузка файлов (413 Request Entity Too Large)
+
+Для загрузки фонового изображения и файлов товаров приложение допускает файлы до 50 МБ. Во внутреннем nginx (`infra/nginx.conf`) задано `client_max_body_size 51m`. Если запросы идут через **внешний** nginx, в нём тоже нужно разрешить размер тела, например в `server` или `location /`:
+
+```nginx
+client_max_body_size 51m;
+```
