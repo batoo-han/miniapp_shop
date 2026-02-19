@@ -7,7 +7,7 @@ Telegram-бот для запуска витрины товаров (Mini App).
 import logging
 import os
 
-from telegram import KeyboardButton, MenuButtonWebApp, ReplyKeyboardMarkup, WebAppInfo
+from telegram import MenuButtonWebApp, WebAppInfo
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # Логирование: httpx/httpcore не логируем каждый getUpdates
@@ -34,18 +34,10 @@ def get_miniapp_url() -> str:
 def get_welcome_text() -> str:
     """
     Приветственный текст при /start.
-
-    Почему добавляем ссылку в текст:
-    - по опыту часть клиентов/режимов Telegram может вести себя по-разному с кнопкой меню;
-      ссылка остаётся самым надёжным способом открыть витрину.
     """
-    url = get_miniapp_url()
-    return f"""🛒 Это тестовый магазин с витриной товаров.
+    return """🛒 Это тестовый магазин с витриной товаров.
 
-Для запуска витрины нажмите на кнопку «Каталог».
-
-Если кнопка не открывает витрину, откройте ссылку:
-{url}"""
+Для запуска витрины нажмите на кнопку «Каталог» в меню."""
 
 
 async def ensure_menu_button_for_chat(application: Application, chat_id: int) -> None:
@@ -75,25 +67,8 @@ async def cmd_start(update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Важный момент: кнопки `web_app` (и меню-кнопка) корректно работают в приватном чате с ботом.
     await ensure_menu_button_for_chat(context.application, update.effective_chat.id)
 
-    miniapp_url = get_miniapp_url()
-
-    # Рекомендованный Telegram способ запуска Mini App — кнопка `web_app` в reply keyboard.
-    # Она отображается над полем ввода и, как правило, работает стабильнее, чем кнопка меню
-    # в разных клиентах (Desktop/Web/мобильные).
-    reply_kb = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Каталог", web_app=WebAppInfo(url=miniapp_url))]],
-        resize_keyboard=True,
-        one_time_keyboard=False,
-        is_persistent=True,
-        input_field_placeholder="Нажмите «Каталог», чтобы открыть витрину",
-    )
-
     if update.message:
-        await update.message.reply_text(
-            get_welcome_text(),
-            reply_markup=reply_kb,
-            disable_web_page_preview=True,
-        )
+        await update.message.reply_text(get_welcome_text())
 
 
 async def post_init(application: Application) -> None:

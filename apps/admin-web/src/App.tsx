@@ -9,8 +9,13 @@ import { Settings } from './pages/Settings'
 import { ProtectedRoute } from './ProtectedRoute'
 
 export function App() {
+  // В проде админка живёт по /admin/. В dev (vite) — обычно на /.
+  const basename =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+      ? '/admin'
+      : '/'
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute />}>
