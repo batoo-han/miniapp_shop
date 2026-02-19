@@ -304,3 +304,47 @@ export function getFileUrl(fileId: string): string {
   const base = API_BASE.replace(/\/api\/?$/, '')
   return `${base}/api/files/${fileId}`
 }
+
+// --- Settings ---
+export type Settings = {
+  contact_telegram_link: string
+  storage_max_file_size_mb: number
+  storage_allowed_image_types: string
+  storage_allowed_attachment_types: string
+  log_level: string
+  log_max_bytes_mb: number
+  api_port: number
+  cors_origins: string
+  storage_path: string
+}
+
+export type SettingsUpdate = {
+  contact_telegram_link?: string
+  storage_max_file_size_mb?: number
+  storage_allowed_image_types?: string
+  storage_allowed_attachment_types?: string
+  log_level?: string
+  log_max_bytes_mb?: number
+}
+
+export async function getSettings(): Promise<Settings> {
+  const res = await fetchWithAuth(`${API_BASE}/admin/settings`, {
+    method: 'GET',
+    headers: authHeaders(),
+  })
+  if (!res.ok) throw new Error('Failed to get settings')
+  return res.json()
+}
+
+export async function updateSettings(data: SettingsUpdate): Promise<Settings> {
+  const res = await fetchWithAuth(`${API_BASE}/admin/settings`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: 'Failed to update settings' }))
+    throw new Error(error.detail || 'Failed to update settings')
+  }
+  return res.json()
+}

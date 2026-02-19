@@ -19,6 +19,9 @@ import {
   uploadImage,
   getFileUrl,
 } from '../api'
+import { useToast } from '../components/Toast'
+import { FileUpload } from '../components/FileUpload'
+import { Modal } from '../components/Modal'
 
 type ImageItem = { id: string; url: string; alt?: string; sort_order: number }
 type AttachmentItem = { id: string; title: string; url: string; sort_order: number }
@@ -77,6 +80,11 @@ export function ProductEdit() {
   const [loading, setLoading] = useState(!isNew)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const { showToast, ToastContainer } = useToast()
+  const [showSpecModal, setShowSpecModal] = useState(false)
+  const [showVariantModal, setShowVariantModal] = useState(false)
+  const [newSpec, setNewSpec] = useState({ name: '', value: '', unit: '' })
+  const [newVariant, setNewVariant] = useState({ option_name: '', option_value: '', stock_qty: 0, in_order_qty: 0 })
 
   const loadProduct = useCallback(async () => {
     if (isNew || !id) return
@@ -150,65 +158,111 @@ export function ProductEdit() {
       }
       if (isNew) {
         const res = await createProduct(payload)
-        navigate(`/product/${res.id}/edit`)
+        showToast('Товар успешно создан', 'success')
+        // Обновляем id в URL и перезагружаем данные
+        navigate(`/product/${res.id}/edit`, { replace: true })
+        // Обновляем состояние для загрузки товара с новым id
+        const loadedProduct = (await getProduct(res.id)) as Record<string, unknown>
+        setData({
+          slug: (loadedProduct.slug as string) ?? '',
+          title: (loadedProduct.title as string) ?? '',
+          sku: (loadedProduct.sku as string) ?? '',
+          manufacturer: (loadedProduct.manufacturer as string) ?? '',
+          category_id: (loadedProduct.category_id as string) ?? '',
+          short_description: (loadedProduct.short_description as string) ?? '',
+          description: (loadedProduct.description as string) ?? '',
+          price_amount: loadedProduct.price_amount != null ? Number(loadedProduct.price_amount) : null,
+          price_currency: (loadedProduct.price_currency as string) ?? 'RUB',
+          is_published: Boolean(loadedProduct.is_published),
+          sort_order: Number(loadedProduct.sort_order) ?? 0,
+          images: ((loadedProduct.images as ImageItem[]) ?? []).map((i) => ({
+            ...i,
+            sort_order: i.sort_order ?? 0,
+          })),
+          attachments: ((loadedProduct.attachments as AttachmentItem[]) ?? []).map((a) => ({
+            ...a,
+            sort_order: a.sort_order ?? 0,
+          })),
+          specs: ((loadedProduct.specs as SpecItem[]) ?? []).map((s) => ({
+            ...s,
+            sort_order: s.sort_order ?? 0,
+          })),
+          variants: ((loadedProduct.variants as VariantItem[]) ?? []).map((v) => ({
+            ...v,
+            stock_qty: v.stock_qty ?? 0,
+            in_order_qty: v.in_order_qty ?? 0,
+            sort_order: v.sort_order ?? 0,
+          })),
+        })
       } else {
         await updateProduct(id!, payload)
+        showToast('Товар успешно сохранён', 'success')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка сохранения')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка сохранения'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !id || isNew) return
-    try {
-      const res = await uploadImage(id, file, undefined, data.images.length)
-      setData((d) => ({
-        ...d,
-        images: [
-          ...d.images,
-          { id: res.id, url: res.url, sort_order: d.images.length },
-        ],
-      }))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка загрузки')
+  async function handleImagesSelected(files: File[]) {
+    if (!id || isNew) return
+    for (const file of files) {
+      try {
+        const res = await uploadImage(id, file, undefined, data.images.length)
+        setData((d) => ({
+          ...d,
+          images: [
+            ...d.images,
+            { id: res.id, url: res.url, sort_order: d.images.length },
+          ],
+        }))
+        showToast(`Фотография "${file.name}" успешно загружена`, 'success')
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки'
+        showToast(`Ошибка загрузки "${file.name}": ${errorMessage}`, 'error')
+      }
     }
-    e.target.value = ''
   }
 
-  async function handleAttachmentUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !id || isNew) return
-    try {
-      const res = await uploadAttachment(id, file, file.name, data.attachments.length)
-      setData((d) => ({
-        ...d,
-        attachments: [
-          ...d.attachments,
-          {
-            id: res.id,
-            title: file.name,
-            url: res.url,
-            sort_order: d.attachments.length,
-          },
-        ],
-      }))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка загрузки')
+  async function handleAttachmentsSelected(files: File[]) {
+    if (!id || isNew) return
+    for (const file of files) {
+      try {
+        const res = await uploadAttachment(id, file, file.name, data.attachments.length)
+        setData((d) => ({
+          ...d,
+          attachments: [
+            ...d.attachments,
+            {
+              id: res.id,
+              title: file.name,
+              url: res.url,
+              sort_order: d.attachments.length,
+            },
+          ],
+        }))
+        showToast(`Файл "${file.name}" успешно загружен`, 'success')
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки'
+        showToast(`Ошибка загрузки "${file.name}": ${errorMessage}`, 'error')
+      }
     }
-    e.target.value = ''
   }
 
   async function handleDeleteImage(imgId: string) {
     if (!id || isNew) return
+    if (!confirm('Удалить фотографию?')) return
     try {
       await deleteFile(imgId)
       setData((d) => ({ ...d, images: d.images.filter((i) => i.id !== imgId) }))
+      showToast('Фотография удалена', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка удаления')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка удаления'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     }
   }
 
@@ -232,61 +286,83 @@ export function ProductEdit() {
 
   async function handleDeleteAttachment(attId: string) {
     if (!id || isNew) return
+    if (!confirm('Удалить файл?')) return
     try {
       await deleteFile(attId)
       setData((d) => ({
         ...d,
         attachments: d.attachments.filter((a) => a.id !== attId),
       }))
+      showToast('Файл удалён', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка удаления')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка удаления'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     }
   }
 
   async function handleAddSpec() {
     if (!id || isNew) return
-    const name = prompt('Название ТТХ')
-    const value = prompt('Значение')
-    if (!name || !value) return
+    if (!newSpec.name.trim() || !newSpec.value.trim()) {
+      showToast('Заполните название и значение', 'error')
+      return
+    }
     try {
       const res = await addSpec(id, {
-        name,
-        value,
+        name: newSpec.name.trim(),
+        value: newSpec.value.trim(),
+        unit: newSpec.unit.trim() || undefined,
         sort_order: data.specs.length,
       })
       setData((d) => ({
         ...d,
         specs: [
           ...d.specs,
-          { id: res.id, name, value, unit: '', sort_order: d.specs.length },
+          {
+            id: res.id,
+            name: newSpec.name.trim(),
+            value: newSpec.value.trim(),
+            unit: newSpec.unit.trim() || '',
+            sort_order: d.specs.length,
+          },
         ],
       }))
+      setNewSpec({ name: '', value: '', unit: '' })
+      setShowSpecModal(false)
+      showToast('Характеристика добавлена', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка добавления ТТХ')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка добавления ТТХ'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     }
   }
 
   async function handleDeleteSpec(specId: string) {
     if (!id || isNew) return
+    if (!confirm('Удалить характеристику?')) return
     try {
       await deleteSpec(id, specId)
       setData((d) => ({ ...d, specs: d.specs.filter((s) => s.id !== specId) }))
+      showToast('Характеристика удалена', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка удаления ТТХ')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка удаления ТТХ'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     }
   }
 
   async function handleAddVariant() {
     if (!id || isNew) return
-    const option_name = prompt('Название опции (например, Цвет)')
-    const option_value = prompt('Значение (например, Multicam)')
-    if (!option_name || !option_value) return
+    if (!newVariant.option_name.trim() || !newVariant.option_value.trim()) {
+      showToast('Заполните название опции и значение', 'error')
+      return
+    }
     try {
       const res = await addVariant(id, {
-        option_name,
-        option_value,
-        stock_qty: 0,
-        in_order_qty: 0,
+        option_name: newVariant.option_name.trim(),
+        option_value: newVariant.option_value.trim(),
+        stock_qty: newVariant.stock_qty || 0,
+        in_order_qty: newVariant.in_order_qty || 0,
         sort_order: data.variants.length,
       })
       setData((d) => ({
@@ -295,16 +371,21 @@ export function ProductEdit() {
           ...d.variants,
           {
             id: res.id,
-            option_name,
-            option_value,
-            stock_qty: 0,
-            in_order_qty: 0,
+            option_name: newVariant.option_name.trim(),
+            option_value: newVariant.option_value.trim(),
+            stock_qty: newVariant.stock_qty || 0,
+            in_order_qty: newVariant.in_order_qty || 0,
             sort_order: d.variants.length,
           },
         ],
       }))
+      setNewVariant({ option_name: '', option_value: '', stock_qty: 0, in_order_qty: 0 })
+      setShowVariantModal(false)
+      showToast('Вариант добавлен', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка добавления варианта')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка добавления варианта'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     }
   }
 
@@ -329,21 +410,28 @@ export function ProductEdit() {
 
   async function handleDeleteVariant(variantId: string) {
     if (!id || isNew) return
+    if (!confirm('Удалить вариант?')) return
     try {
       await deleteVariant(id, variantId)
       setData((d) => ({
         ...d,
         variants: d.variants.filter((v) => v.id !== variantId),
       }))
+      showToast('Вариант удалён', 'success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка удаления варианта')
+      const errorMessage = err instanceof Error ? err.message : 'Ошибка удаления варианта'
+      setError(errorMessage)
+      showToast(errorMessage, 'error')
     }
   }
 
   if (loading) return <p className="loading">Загрузка...</p>
 
+  const canUploadFiles = !isNew && id
+
   return (
     <div className="product-edit">
+      <ToastContainer />
       <h1>{isNew ? 'Новый товар' : 'Редактирование'}</h1>
       {error && <p className="error">{error}</p>}
       <form onSubmit={handleSubmit} className="edit-form">
@@ -484,172 +572,358 @@ export function ProductEdit() {
           </label>
         </section>
 
-        {!isNew && (
-          <>
-            <section className="form-section">
-              <h2>Фото</h2>
-              <input
-                type="file"
+        <section className="form-section">
+          <h2>Фото</h2>
+          {!canUploadFiles ? (
+            <div className="form-info-message">
+              Сначала сохраните товар, чтобы загрузить фотографии
+            </div>
+          ) : (
+            <>
+              <FileUpload
                 accept="image/*"
-                onChange={handleImageUpload}
+                multiple
+                onFilesSelected={handleImagesSelected}
+                label="Выберите фотографии"
+                description="или перетащите их сюда"
               />
-              <div className="images-grid">
-                {[...data.images]
-                  .sort((a, b) => a.sort_order - b.sort_order)
-                  .map((img, idx) => (
-                    <div key={img.id} className="image-card">
-                      <img
-                        src={getFileUrl(img.id)}
-                        alt={img.alt}
-                      />
-                      <div className="image-actions">
-                        <button
-                          type="button"
-                          onClick={() => handleMoveImage(idx, -1)}
-                          disabled={idx === 0}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveImage(idx, 1)}
-                          disabled={idx === data.images.length - 1}
-                        >
-                          ↓
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteImage(img.id)}
-                        >
-                          Удалить
-                        </button>
+              {data.images.length > 0 && (
+                <div className="images-grid">
+                  {[...data.images]
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((img, idx) => (
+                      <div key={img.id} className="image-card">
+                        <img src={getFileUrl(img.id)} alt={img.alt} />
+                        <div className="image-actions">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleMoveImage(idx, -1)
+                            }}
+                            disabled={idx === 0}
+                            title="Переместить вверх"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleMoveImage(idx, 1)
+                            }}
+                            disabled={idx === data.images.length - 1}
+                            title="Переместить вниз"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteImage(img.id)
+                            }}
+                            title="Удалить"
+                          >
+                            Удалить
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </div>
-            </section>
+                    ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
 
-            <section className="form-section">
-              <h2>Прикреплённые файлы</h2>
-              <input
-                type="file"
+        <section className="form-section">
+          <h2>Прикреплённые файлы</h2>
+          {!canUploadFiles ? (
+            <div className="form-info-message">
+              Сначала сохраните товар, чтобы загрузить файлы
+            </div>
+          ) : (
+            <>
+              <FileUpload
                 accept=".pdf,.zip,.rar"
-                onChange={handleAttachmentUpload}
+                multiple
+                onFilesSelected={handleAttachmentsSelected}
+                label="Выберите файлы"
+                description="или перетащите их сюда (PDF, ZIP, RAR)"
               />
-              <ul className="attachments-list">
-                {data.attachments.map((a) => (
-                  <li key={a.id}>
-                    <a href={getFileUrl(a.id)} target="_blank" rel="noreferrer">
-                      {a.title}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteAttachment(a.id)}
-                    >
-                      Удалить
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
+              {data.attachments.length > 0 && (
+                <ul className="attachments-list">
+                  {data.attachments.map((a) => (
+                    <li key={a.id}>
+                      <a href={getFileUrl(a.id)} target="_blank" rel="noreferrer">
+                        {a.title}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAttachment(a.id)}
+                      >
+                        Удалить
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </section>
 
-            <section className="form-section">
-              <h2>ТТХ</h2>
-              <button type="button" onClick={handleAddSpec}>
+        <section className="form-section">
+          <h2>ТТХ</h2>
+          {!canUploadFiles ? (
+            <div className="form-info-message">
+              Сначала сохраните товар, чтобы добавить характеристики
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowSpecModal(true)}
+                className="btn btn-secondary"
+              >
                 Добавить ТТХ
               </button>
-              <table className="specs-table">
-                <thead>
-                  <tr>
-                    <th>Название</th>
-                    <th>Значение</th>
-                    <th>Ед.</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.specs.map((s) => (
-                    <tr key={s.id}>
-                      <td>{s.name}</td>
-                      <td>{s.value}</td>
-                      <td>{s.unit || '—'}</td>
-                      <td>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSpec(s.id)}
-                        >
-                          Удалить
-                        </button>
-                      </td>
+              {data.specs.length > 0 && (
+                <table className="specs-table">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Значение</th>
+                      <th>Ед.</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
+                  </thead>
+                  <tbody>
+                    {data.specs.map((s) => (
+                      <tr key={s.id}>
+                        <td>{s.name}</td>
+                        <td>{s.value}</td>
+                        <td>{s.unit || '—'}</td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSpec(s.id)}
+                            className="btn-link btn-danger"
+                          >
+                            Удалить
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
+        </section>
 
-            <section className="form-section">
-              <h2>Варианты</h2>
-              <button type="button" onClick={handleAddVariant}>
+        <section className="form-section">
+          <h2>Варианты</h2>
+          {!canUploadFiles ? (
+            <div className="form-info-message">
+              Сначала сохраните товар, чтобы добавить варианты
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setShowVariantModal(true)}
+                className="btn btn-secondary"
+              >
                 Добавить вариант
               </button>
-              <table className="variants-edit-table">
-                <thead>
-                  <tr>
-                    <th>Опция</th>
-                    <th>Значение</th>
-                    <th>В наличии</th>
-                    <th>В заказе</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.variants.map((v) => (
-                    <tr key={v.id}>
-                      <td>{v.option_name}</td>
-                      <td>{v.option_value}</td>
-                      <td>
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.stock_qty}
-                          onChange={(e) =>
-                            handleUpdateVariant(
-                              v.id,
-                              'stock_qty',
-                              parseInt(e.target.value, 10) || 0
-                            )
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min={0}
-                          value={v.in_order_qty}
-                          onChange={(e) =>
-                            handleUpdateVariant(
-                              v.id,
-                              'in_order_qty',
-                              parseInt(e.target.value, 10) || 0
-                            )
-                          }
-                        />
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteVariant(v.id)}
-                        >
-                          Удалить
-                        </button>
-                      </td>
+              {data.variants.length > 0 && (
+                <table className="variants-edit-table">
+                  <thead>
+                    <tr>
+                      <th>Опция</th>
+                      <th>Значение</th>
+                      <th>В наличии</th>
+                      <th>В заказе</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-          </>
-        )}
+                  </thead>
+                  <tbody>
+                    {data.variants.map((v) => (
+                      <tr key={v.id}>
+                        <td>{v.option_name}</td>
+                        <td>{v.option_value}</td>
+                        <td>
+                          <input
+                            type="number"
+                            min={0}
+                            value={v.stock_qty}
+                            onChange={(e) =>
+                              handleUpdateVariant(
+                                v.id,
+                                'stock_qty',
+                                parseInt(e.target.value, 10) || 0
+                              )
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min={0}
+                            value={v.in_order_qty}
+                            onChange={(e) =>
+                              handleUpdateVariant(
+                                v.id,
+                                'in_order_qty',
+                                parseInt(e.target.value, 10) || 0
+                              )
+                            }
+                          />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteVariant(v.id)}
+                            className="btn-link btn-danger"
+                          >
+                            Удалить
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          )}
+        </section>
+
+        <Modal
+          isOpen={showSpecModal}
+          onClose={() => {
+            setShowSpecModal(false)
+            setNewSpec({ name: '', value: '', unit: '' })
+          }}
+          title="Добавить характеристику"
+        >
+          <div className="form-group">
+            <label>
+              Название <span style={{ color: 'var(--color-danger)' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={newSpec.name}
+              onChange={(e) => setNewSpec((s) => ({ ...s, name: e.target.value }))}
+              placeholder="Например: Вес"
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label>
+              Значение <span style={{ color: 'var(--color-danger)' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={newSpec.value}
+              onChange={(e) => setNewSpec((s) => ({ ...s, value: e.target.value }))}
+              placeholder="Например: 2.5"
+            />
+          </div>
+          <div className="form-group">
+            <label>Единица измерения</label>
+            <input
+              type="text"
+              value={newSpec.unit}
+              onChange={(e) => setNewSpec((s) => ({ ...s, unit: e.target.value }))}
+              placeholder="Например: кг"
+            />
+          </div>
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setShowSpecModal(false)
+                setNewSpec({ name: '', value: '', unit: '' })
+              }}
+            >
+              Отмена
+            </button>
+            <button type="button" className="btn btn-primary" onClick={handleAddSpec}>
+              Добавить
+            </button>
+          </div>
+        </Modal>
+
+        <Modal
+          isOpen={showVariantModal}
+          onClose={() => {
+            setShowVariantModal(false)
+            setNewVariant({ option_name: '', option_value: '', stock_qty: 0, in_order_qty: 0 })
+          }}
+          title="Добавить вариант"
+        >
+          <div className="form-group">
+            <label>
+              Название опции <span style={{ color: 'var(--color-danger)' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={newVariant.option_name}
+              onChange={(e) => setNewVariant((v) => ({ ...v, option_name: e.target.value }))}
+              placeholder="Например: Цвет"
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label>
+              Значение <span style={{ color: 'var(--color-danger)' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={newVariant.option_value}
+              onChange={(e) => setNewVariant((v) => ({ ...v, option_value: e.target.value }))}
+              placeholder="Например: Multicam"
+            />
+          </div>
+          <div className="form-group">
+            <label>В наличии</label>
+            <input
+              type="number"
+              min={0}
+              value={newVariant.stock_qty}
+              onChange={(e) =>
+                setNewVariant((v) => ({ ...v, stock_qty: parseInt(e.target.value, 10) || 0 }))
+              }
+            />
+          </div>
+          <div className="form-group">
+            <label>В заказе</label>
+            <input
+              type="number"
+              min={0}
+              value={newVariant.in_order_qty}
+              onChange={(e) =>
+                setNewVariant((v) => ({ ...v, in_order_qty: parseInt(e.target.value, 10) || 0 }))
+              }
+            />
+          </div>
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setShowVariantModal(false)
+                setNewVariant({ option_name: '', option_value: '', stock_qty: 0, in_order_qty: 0 })
+              }}
+            >
+              Отмена
+            </button>
+            <button type="button" className="btn btn-primary" onClick={handleAddVariant}>
+              Добавить
+            </button>
+          </div>
+        </Modal>
 
         <button type="submit" className="btn btn-primary" disabled={saving}>
           {saving ? 'Сохранение...' : 'Сохранить'}

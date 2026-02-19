@@ -28,6 +28,8 @@ from app.schemas.admin import (
     LoginResponse,
     ProductCreate,
     ProductUpdate,
+    SettingsResponse,
+    SettingsUpdate,
     SpecCreate,
     SpecUpdate,
     VariantCreate,
@@ -608,3 +610,130 @@ async def admin_delete_file(
             await db.delete(row)
             return {"deleted": str(file_id)}
     raise HTTPException(status_code=404, detail="File not found")
+
+
+# --- Settings ---
+@router.get("/settings", response_model=SettingsResponse)
+async def admin_get_settings():
+    """Получить текущие настройки."""
+    s = get_settings()
+    return SettingsResponse(
+        contact_telegram_link=s.contact_telegram_link,
+        storage_max_file_size_mb=s.storage_max_file_size_mb,
+        storage_allowed_image_types=s.storage_allowed_image_types,
+        storage_allowed_attachment_types=s.storage_allowed_attachment_types,
+        log_level=s.log_level,
+        log_max_bytes_mb=s.log_max_bytes_mb,
+        api_port=s.api_port,
+        cors_origins=s.cors_origins,
+        storage_path=s.storage_path,
+    )
+
+
+@router.put("/settings", response_model=SettingsResponse)
+async def admin_update_settings(data: SettingsUpdate):
+    """Обновить безопасные настройки (сохраняет в .env файл)."""
+    import os
+    import shlex
+    from pathlib import Path
+
+    # Ищем .env в корне проекта (относительно services/api)
+    # В Docker контейнере рабочая директория обычно /app, .env должен быть в корне проекта
+    env_path = Path(".env")
+    # Если не найден, пробуем найти относительно корня проекта
+    if not env_path.exists():
+        # Пробуем найти .env в родительских директориях (для Docker)
+        current = Path(__file__).parent.parent.parent.parent  # services/api/app/api -> services/api
+        env_path = current / ".env"
+        if not env_path.exists():
+            # Пробуем корень проекта
+            env_path = current.parent / ".env"
+        if not env_path.exists():
+            raise HTTPException(status_code=500, detail=".env file not found")
+
+    # Читаем текущий .env
+    env_lines = []
+    if env_path.exists():
+        with open(env_path, "r", encoding="utf-8") as f:
+            env_lines = f.readlines()
+
+    # Обновляем значения
+    updates = data.model_dump(exclude_unset=True)
+    updated_keys = set()
+
+    new_lines = []
+    for line in env_lines:
+        stripped = line.strip()
+        # Сохраняем пустые строки и комментарии
+        if not stripped or stripped.startswith("#"):
+            new_lines.append(line)
+            continue
+
+        if "=" not in stripped:
+            new_lines.append(line)
+            continue
+
+        # Парсим ключ и значение (учитываем кавычки)
+        parts = stripped.split("=", 1)
+        if len(parts) != 2:
+            new_lines.append(line)
+            continue
+
+        key = parts[0].strip().upper()
+        original_value = parts[1].strip()
+
+        # Обновляем значение, если оно есть в updates
+        if key.lower() in updates:
+            value = updates[key.lower()]
+            # Форматируем значение
+            if isinstance(value, str):
+                # Если значение содержит пробелы или специальные символы, используем кавычки
+                if " " in value or "=" in value or "#" in value:
+                    # Экранируем кавычки внутри строки
+                    escaped_value = value.replace('\\', '\\\\').replace('"', '\\"')
+                    new_lines.append(f'{key}="{escaped_value}"\n')
+                else:
+                    new_lines.append(f"{key}={value}\n")
+            else:
+                new_lines.append(f"{key}={value}\n")
+            updated_keys.add(key.lower())
+        else:
+            # Сохраняем оригинальную строку
+            new_lines.append(line)
+
+    # Добавляем новые ключи, которых не было в .env
+    for key, value in updates.items():
+        if key not in updated_keys:
+            key_upper = key.upper()
+            if isinstance(value, str):
+                if " " in value or "=" in value or "#" in value:
+                    escaped_value = value.replace('\\', '\\\\').replace('"', '\\"')
+                    new_lines.append(f'{key_upper}="{escaped_value}"\n')
+                else:
+                    new_lines.append(f"{key_upper}={value}\n")
+            else:
+                new_lines.append(f"{key_upper}={value}\n")
+
+    # Сохраняем обновлённый .env
+    try:
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+
+        # Перезагружаем настройки (сбрасываем кэш)
+        get_settings.cache_clear()
+        s = get_settings()
+
+        return SettingsResponse(
+            contact_telegram_link=s.contact_telegram_link,
+            storage_max_file_size_mb=s.storage_max_file_size_mb,
+            storage_allowed_image_types=s.storage_allowed_image_types,
+            storage_allowed_attachment_types=s.storage_allowed_attachment_types,
+            log_level=s.log_level,
+            log_max_bytes_mb=s.log_max_bytes_mb,
+            api_port=s.api_port,
+            cors_origins=s.cors_origins,
+            storage_path=s.storage_path,
+        )
+    except Exception as e:
+        logging.getLogger(__name__).exception("Failed to update .env file")
+        raise HTTPException(status_code=500, detail=f"Failed to update settings: {str(e)}")

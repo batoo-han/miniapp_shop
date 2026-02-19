@@ -113,3 +113,31 @@ class ImageSortUpdate(BaseModel):
     """Обновление порядка изображения."""
 
     sort_order: int
+
+
+class SettingsResponse(BaseModel):
+    """Ответ с настройками (read-only для секретов, editable для безопасных)."""
+
+    # Безопасные настройки (редактируемые)
+    contact_telegram_link: str
+    storage_max_file_size_mb: float
+    storage_allowed_image_types: str
+    storage_allowed_attachment_types: str
+    log_level: str
+    log_max_bytes_mb: float
+
+    # Только для чтения (секреты и системные)
+    api_port: int
+    cors_origins: str
+    storage_path: str
+
+
+class SettingsUpdate(BaseModel):
+    """Обновление безопасных настроек."""
+
+    contact_telegram_link: str | None = None
+    storage_max_file_size_mb: float | None = None
+    storage_allowed_image_types: str | None = None
+    storage_allowed_attachment_types: str | None = None
+    log_level: str | None = None
+    log_max_bytes_mb: float | None = None
