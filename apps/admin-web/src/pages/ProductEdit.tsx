@@ -119,6 +119,14 @@ export function ProductEdit() {
   const [data, setData] = useState<ProductData>(emptyProduct)
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([])
   const [loading, setLoading] = useState(!isNew)
+  
+  // Сброс данных при переходе к новому товару
+  useEffect(() => {
+    if (isNew) {
+      setData(emptyProduct)
+      setLoading(false)
+    }
+  }, [isNew, id])
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const { showToast, ToastContainer } = useToast()
@@ -482,17 +490,20 @@ export function ProductEdit() {
         <section className="form-section">
           <h2>Основное</h2>
           
-          {/* Ряд 1: Опубликован | Порядок сортировки */}
-          <div className="form-row form-row--top">
-            <label className="checkbox-label checkbox-label--inline">
-              <input
-                type="checkbox"
-                checked={data.is_published}
+          {/* Ряд 1: Статус публикации | Порядок сортировки */}
+          <div className="form-row">
+            <label>
+              Статус
+              <select
+                value={data.is_published ? 'published' : 'draft'}
                 onChange={(e) =>
-                  setData((d) => ({ ...d, is_published: e.target.checked }))
+                  setData((d) => ({ ...d, is_published: e.target.value === 'published' }))
                 }
-              />
-              Опубликован
+                className={data.is_published ? 'select-status--published' : 'select-status--draft'}
+              >
+                <option value="published">Опубликован</option>
+                <option value="draft">Не опубликован</option>
+              </select>
             </label>
             <label>
               Порядок сортировки
@@ -532,15 +543,14 @@ export function ProductEdit() {
             <label>
               Название
               <input
+                type="text"
                 value={data.title}
                 onChange={(e) => {
                   const newTitle = e.target.value
                   setData((d) => {
                     const newData = { ...d, title: newTitle }
-                    // Автозаполнение slug для новых товаров или если slug пуст
-                    if (isNew || !d.slug) {
-                      newData.slug = generateSlug(newTitle)
-                    }
+                    // Автозаполнение slug при вводе названия
+                    newData.slug = generateSlug(newTitle)
                     return newData
                   })
                 }}
@@ -550,6 +560,7 @@ export function ProductEdit() {
             <label>
               Артикул
               <input
+                type="text"
                 value={data.sku}
                 onChange={(e) => setData((d) => ({ ...d, sku: e.target.value }))}
               />
@@ -560,6 +571,7 @@ export function ProductEdit() {
           <label>
             Slug
             <input
+              type="text"
               value={data.slug}
               onChange={(e) => setData((d) => ({ ...d, slug: e.target.value }))}
               required
@@ -571,6 +583,7 @@ export function ProductEdit() {
           <label>
             Производитель
             <input
+              type="text"
               value={data.manufacturer}
               onChange={(e) =>
                 setData((d) => ({ ...d, manufacturer: e.target.value }))
@@ -582,6 +595,7 @@ export function ProductEdit() {
           <label>
             Хэштеги
             <input
+              type="text"
               value={data.hashtags}
               onChange={(e) => setData((d) => ({ ...d, hashtags: e.target.value }))}
               onBlur={(e) => setData((d) => ({ ...d, hashtags: normalizeHashtags(e.target.value) }))}

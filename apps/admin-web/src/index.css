@@ -633,6 +633,19 @@ body {
   margin-bottom: 0;
 }
 
+/* Стилизация select статуса публикации */
+.select-status--published {
+  background-color: #dcfce7 !important;
+  border-color: #22c55e !important;
+  color: #166534 !important;
+}
+
+.select-status--draft {
+  background-color: #fef3c7 !important;
+  border-color: #f59e0b !important;
+  color: #92400e !important;
+}
+
 .checkbox-label input[type='checkbox'] {
   width: 18px;
   height: 18px;
