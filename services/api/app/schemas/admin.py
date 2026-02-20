@@ -35,6 +35,7 @@ class ProductCreate(BaseModel):
     price_currency: str | None = "RUB"
     is_published: bool = False
     sort_order: int = 0
+    hashtags: str | None = None
 
 
 class ProductUpdate(BaseModel):
@@ -51,6 +52,7 @@ class ProductUpdate(BaseModel):
     price_currency: str | None = None
     is_published: bool | None = None
     sort_order: int | None = None
+    hashtags: str | None = None
 
 
 class CategoryCreate(BaseModel):

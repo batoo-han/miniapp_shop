@@ -492,6 +492,26 @@ body {
   flex-wrap: wrap;
 }
 
+/* 3 колонки в ряд */
+.form-row--3cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-lg);
+  align-items: end;
+}
+
+@media (max-width: 768px) {
+  .form-row--3cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .form-row--3cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 4 колонки в ряд для объединённых блоков */
 .form-row--4cols {
   display: grid;
@@ -570,14 +590,9 @@ body {
   width: 100%;
 }
 
+/* Числовые поля со стрелками увеличения/уменьшения */
 .form-section input[type='number'] {
-  -moz-appearance: textfield;
-}
-
-.form-section input[type='number']::-webkit-inner-spin-button,
-.form-section input[type='number']::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+  padding-right: var(--spacing-sm);
 }
 
 .checkbox-label {

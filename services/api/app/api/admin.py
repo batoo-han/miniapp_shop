@@ -202,6 +202,7 @@ async def admin_create_product(
         price_currency=data.price_currency,
         is_published=data.is_published,
         sort_order=data.sort_order,
+        hashtags=data.hashtags,
     )
     db.add(product)
     await db.flush()
@@ -248,6 +249,7 @@ async def admin_get_product(
         "price_currency": product.price_currency,
         "is_published": product.is_published,
         "sort_order": product.sort_order,
+        "hashtags": product.hashtags,
         "images": [{"id": str(i.id), "url": file_url(i.id), "alt": i.alt, "sort_order": i.sort_order} for i in sorted(product.images, key=lambda x: x.sort_order)],
         "attachments": [{"id": str(a.id), "title": a.title, "url": file_url(a.id), "sort_order": a.sort_order} for a in sorted(product.attachments, key=lambda x: x.sort_order)],
         "specs": [{"id": str(s.id), "name": s.name, "value": s.value, "unit": s.unit, "sort_order": s.sort_order} for s in sorted(product.specs, key=lambda x: x.sort_order)],

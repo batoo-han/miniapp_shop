@@ -47,6 +47,7 @@ type ProductData = {
   price_currency: string
   is_published: boolean
   sort_order: number
+  hashtags: string
   images: ImageItem[]
   attachments: AttachmentItem[]
   specs: SpecItem[]
@@ -65,10 +66,50 @@ const emptyProduct: ProductData = {
   price_currency: 'RUB',
   is_published: false,
   sort_order: 0,
+  hashtags: '',
   images: [],
   attachments: [],
   specs: [],
   variants: [],
+}
+
+/**
+ * Генерация slug из названия (транслитерация кириллицы в латиницу)
+ */
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[а-яё]/g, (char) => {
+      const map: Record<string, string> = {
+        а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo',
+        ж: 'zh', з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm',
+        н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u',
+        ф: 'f', х: 'h', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'sch',
+        ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+      }
+      return map[char] || char
+    })
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Нормализация хэштегов: добавляет # в начало, убирает пробелы внутри тегов
+ */
+function normalizeHashtags(input: string): string {
+  if (!input.trim()) return ''
+  
+  // Разбиваем по пробелам и обрабатываем каждый тег
+  const tags = input.split(/\s+/).filter(Boolean)
+  
+  return tags.map(tag => {
+    // Убираем лишние # в начале
+    let cleaned = tag.replace(/^#+/, '')
+    // Убираем недопустимые символы (оставляем буквы, цифры, подчёркивания)
+    cleaned = cleaned.replace(/[^a-zA-Zа-яА-ЯёЁ0-9_]/g, '')
+    // Добавляем # в начало, если тег не пустой
+    return cleaned ? `#${cleaned}` : ''
+  }).filter(Boolean).join(' ')
 }
 
 export function ProductEdit() {
@@ -102,6 +143,7 @@ export function ProductEdit() {
         price_currency: (p.price_currency as string) ?? 'RUB',
         is_published: Boolean(p.is_published),
         sort_order: Number(p.sort_order ?? 0),
+        hashtags: (p.hashtags as string) ?? '',
         images: ((p.images as ImageItem[]) ?? []).map((i) => ({
           ...i,
           sort_order: i.sort_order ?? 0,
@@ -155,6 +197,7 @@ export function ProductEdit() {
         price_currency: data.price_currency,
         is_published: data.is_published,
         sort_order: data.sort_order,
+        hashtags: data.hashtags || null,
       }
       if (isNew) {
         const res = await createProduct(payload)
@@ -175,6 +218,7 @@ export function ProductEdit() {
           price_currency: (loadedProduct.price_currency as string) ?? 'RUB',
           is_published: Boolean(loadedProduct.is_published),
           sort_order: Number(loadedProduct.sort_order ?? 0),
+          hashtags: (loadedProduct.hashtags as string) ?? '',
           images: ((loadedProduct.images as ImageItem[]) ?? []).map((i) => ({
             ...i,
             sort_order: i.sort_order ?? 0,
@@ -437,25 +481,57 @@ export function ProductEdit() {
       <form onSubmit={handleSubmit} className="edit-form">
         <section className="form-section">
           <h2>Основное</h2>
+          
+          {/* Ряд 1: Опубликован */}
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={data.is_published}
+              onChange={(e) =>
+                setData((d) => ({ ...d, is_published: e.target.checked }))
+              }
+            />
+            Опубликован
+          </label>
+          
+          {/* Ряд 2: Категория */}
+          <label>
+            Категория
+            <select
+              value={data.category_id}
+              onChange={(e) =>
+                setData((d) => ({ ...d, category_id: e.target.value }))
+              }
+            >
+              <option value="">— Корневая —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          
+          {/* Ряд 3: Название | Артикул */}
           <div className="form-row">
-            <label>
-              Slug
-              <input
-                value={data.slug}
-                onChange={(e) => setData((d) => ({ ...d, slug: e.target.value }))}
-                required
-              />
-            </label>
             <label>
               Название
               <input
                 value={data.title}
-                onChange={(e) => setData((d) => ({ ...d, title: e.target.value }))}
+                onChange={(e) => {
+                  const newTitle = e.target.value
+                  setData((d) => {
+                    const newData = { ...d, title: newTitle }
+                    // Автозаполнение slug для новых товаров или если slug пуст
+                    if (isNew || !d.slug) {
+                      newData.slug = generateSlug(newTitle)
+                    }
+                    return newData
+                  })
+                }}
                 required
               />
             </label>
-          </div>
-          <div className="form-row">
             <label>
               Артикул
               <input
@@ -463,30 +539,86 @@ export function ProductEdit() {
                 onChange={(e) => setData((d) => ({ ...d, sku: e.target.value }))}
               />
             </label>
+          </div>
+          
+          {/* Ряд 4: Slug */}
+          <label>
+            Slug
+            <input
+              value={data.slug}
+              onChange={(e) => setData((d) => ({ ...d, slug: e.target.value }))}
+              required
+            />
+            <span className="form-hint">URL-идентификатор товара (латиница, цифры, дефисы)</span>
+          </label>
+          
+          {/* Ряд 5: Производитель */}
+          <label>
+            Производитель
+            <input
+              value={data.manufacturer}
+              onChange={(e) =>
+                setData((d) => ({ ...d, manufacturer: e.target.value }))
+              }
+            />
+          </label>
+          
+          {/* Ряд 6: Хэштеги */}
+          <label>
+            Хэштеги
+            <input
+              value={data.hashtags}
+              onChange={(e) => setData((d) => ({ ...d, hashtags: e.target.value }))}
+              onBlur={(e) => setData((d) => ({ ...d, hashtags: normalizeHashtags(e.target.value) }))}
+              placeholder="#тег1 #тег2 #тег3"
+            />
+            <span className="form-hint">Введите теги через пробел, # добавится автоматически</span>
+          </label>
+          
+          {/* Ряд 7: Цена | Валюта | Порядок сортировки */}
+          <div className="form-row form-row--3cols">
             <label>
-              Производитель
+              Цена
               <input
-                value={data.manufacturer}
+                type="number"
+                step="0.01"
+                min="0"
+                value={data.price_amount ?? ''}
                 onChange={(e) =>
-                  setData((d) => ({ ...d, manufacturer: e.target.value }))
+                  setData((d) => ({
+                    ...d,
+                    price_amount: e.target.value
+                      ? parseFloat(e.target.value)
+                      : null,
+                  }))
                 }
               />
             </label>
             <label>
-              Категория
+              Валюта
               <select
-                value={data.category_id}
+                value={data.price_currency}
                 onChange={(e) =>
-                  setData((d) => ({ ...d, category_id: e.target.value }))
+                  setData((d) => ({ ...d, price_currency: e.target.value }))
                 }
               >
-                <option value="">—</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                <option value="RUB">RUB</option>
+                <option value="USD">USD</option>
+                <option value="CNY">CNY</option>
               </select>
+            </label>
+            <label>
+              Порядок сортировки
+              <input
+                type="number"
+                value={data.sort_order}
+                onChange={(e) =>
+                  setData((d) => ({
+                    ...d,
+                    sort_order: parseInt(e.target.value, 10) || 0,
+                  }))
+                }
+              />
             </label>
           </div>
         </section>
@@ -513,61 +645,6 @@ export function ProductEdit() {
               rows={6}
             />
           </label>
-        </section>
-
-        {/* Блок "Цена и публикация" - объединённый */}
-        <section className="form-section">
-          <h2>Цена и публикация</h2>
-          <div className="form-row form-row--4cols">
-            <label>
-              Сумма
-              <input
-                type="number"
-                step="0.01"
-                value={data.price_amount ?? ''}
-                onChange={(e) =>
-                  setData((d) => ({
-                    ...d,
-                    price_amount: e.target.value
-                      ? parseFloat(e.target.value)
-                      : null,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              Валюта
-              <input
-                value={data.price_currency}
-                onChange={(e) =>
-                  setData((d) => ({ ...d, price_currency: e.target.value }))
-                }
-              />
-            </label>
-            <label>
-              Порядок сортировки
-              <input
-                type="number"
-                value={data.sort_order}
-                onChange={(e) =>
-                  setData((d) => ({
-                    ...d,
-                    sort_order: parseInt(e.target.value, 10) || 0,
-                  }))
-                }
-              />
-            </label>
-            <label className="checkbox-label checkbox-label--inline">
-              <input
-                type="checkbox"
-                checked={data.is_published}
-                onChange={(e) =>
-                  setData((d) => ({ ...d, is_published: e.target.checked }))
-                }
-              />
-              Опубликован
-            </label>
-          </div>
         </section>
 
         <section className="form-section">

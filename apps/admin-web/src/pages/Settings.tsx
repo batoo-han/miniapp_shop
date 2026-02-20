@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { getSettings, updateSettings, uploadBackgroundImage, deleteBackgroundImage, type Settings, type SettingsUpdate } from '../api'
 import { useToast } from '../components/Toast'
 import { FileUpload } from '../components/FileUpload'
+import { ColorPicker } from '../components/ColorPicker'
 import './Settings.css'
 
 export function Settings() {
@@ -179,19 +180,14 @@ export function Settings() {
               <small>Текст, отображаемый в нижней части мини-приложения</small>
             </label>
           </div>
-          <div className="form-group">
-            <label>
-              Цвет фона страницы
-              <input
-                type="color"
-                value={formData.miniapp_background_color || '#000000'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_background_color: e.target.value }))
-                }
-              />
-              <small>Цвет фона страницы мини-приложения (HEX формат). Используется, если не задано изображение.</small>
-            </label>
-          </div>
+          <ColorPicker
+            label="Цвет фона страницы"
+            value={formData.miniapp_background_color || '#000000'}
+            onChange={(value) =>
+              setFormData((d) => ({ ...d, miniapp_background_color: value }))
+            }
+            description="Цвет фона страницы мини-приложения (HEX формат). Используется, если не задано изображение."
+          />
           <div className="form-group">
             <label>
               Изображение фона страницы
@@ -242,71 +238,46 @@ export function Settings() {
               <small>Допустимые форматы: JPG, PNG, WebP. Максимальный размер: 50 МБ. Если задано, используется вместо цвета фона.</small>
             </label>
           </div>
-          <div className="form-group">
-            <label>
-              Цвет основного текста
-              <input
-                type="color"
-                value={formData.miniapp_text_color || '#ffffff'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_text_color: e.target.value }))
-                }
-              />
-              <small>Цвет основного текста на странице</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Цвет заголовков
-              <input
-                type="color"
-                value={formData.miniapp_heading_color || '#ffffff'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_heading_color: e.target.value }))
-                }
-              />
-              <small>Цвет заголовков секций и названий товаров</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Цвет цен
-              <input
-                type="color"
-                value={formData.miniapp_price_color || '#00d4ff'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_price_color: e.target.value }))
-                }
-              />
-              <small>Цвет отображения цен товаров</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Цвет подсказок и вторичного текста
-              <input
-                type="color"
-                value={formData.miniapp_hint_color || '#cccccc'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_hint_color: e.target.value }))
-                }
-              />
-              <small>Цвет описаний, подсказок и вторичного текста</small>
-            </label>
-          </div>
-          <div className="form-group">
-            <label>
-              Цвет фона карточек товаров
-              <input
-                type="color"
-                value={formData.miniapp_card_bg_color || '#2a2a2a'}
-                onChange={(e) =>
-                  setFormData((d) => ({ ...d, miniapp_card_bg_color: e.target.value }))
-                }
-              />
-              <small>Цвет фона карточек товаров</small>
-            </label>
-          </div>
+          <ColorPicker
+            label="Цвет основного текста"
+            value={formData.miniapp_text_color || '#ffffff'}
+            onChange={(value) =>
+              setFormData((d) => ({ ...d, miniapp_text_color: value }))
+            }
+            description="Цвет основного текста на странице"
+          />
+          <ColorPicker
+            label="Цвет заголовков"
+            value={formData.miniapp_heading_color || '#ffffff'}
+            onChange={(value) =>
+              setFormData((d) => ({ ...d, miniapp_heading_color: value }))
+            }
+            description="Цвет заголовков секций и названий товаров"
+          />
+          <ColorPicker
+            label="Цвет цен"
+            value={formData.miniapp_price_color || '#00d4ff'}
+            onChange={(value) =>
+              setFormData((d) => ({ ...d, miniapp_price_color: value }))
+            }
+            description="Цвет отображения цен товаров"
+          />
+          <ColorPicker
+            label="Цвет подсказок и вторичного текста"
+            value={formData.miniapp_hint_color || '#cccccc'}
+            onChange={(value) =>
+              setFormData((d) => ({ ...d, miniapp_hint_color: value }))
+            }
+            description="Цвет описаний, подсказок и вторичного текста"
+          />
+          <ColorPicker
+            label="Цвет фона карточек товаров"
+            value={formData.miniapp_card_bg_color || '#2a2a2a'}
+            onChange={(value) =>
+              setFormData((d) => ({ ...d, miniapp_card_bg_color: value }))
+            }
+            description="Цвет фона карточек товаров"
+          />
         </section>
 
         {/* Настройки логирования */}

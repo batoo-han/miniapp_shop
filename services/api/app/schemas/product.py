@@ -55,6 +55,7 @@ class ProductListItem(BaseModel):
     price_amount: Decimal | None = None
     price_currency: str | None = None
     image_url: str | None = None  # первое изображение
+    hashtags: str | None = None
 
 
 class ProductDetail(BaseModel):
@@ -69,6 +70,7 @@ class ProductDetail(BaseModel):
     short_description: str | None = None
     price_amount: Decimal | None = None
     price_currency: str | None = None
+    hashtags: str | None = None
     images: list[ProductImageOut]
     attachments: list[ProductAttachmentOut]
     specs: list[ProductSpecOut]
