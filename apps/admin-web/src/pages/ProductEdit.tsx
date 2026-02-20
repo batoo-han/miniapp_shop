@@ -482,17 +482,32 @@ export function ProductEdit() {
         <section className="form-section">
           <h2>Основное</h2>
           
-          {/* Ряд 1: Опубликован */}
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={data.is_published}
-              onChange={(e) =>
-                setData((d) => ({ ...d, is_published: e.target.checked }))
-              }
-            />
-            Опубликован
-          </label>
+          {/* Ряд 1: Опубликован | Порядок сортировки */}
+          <div className="form-row form-row--top">
+            <label className="checkbox-label checkbox-label--inline">
+              <input
+                type="checkbox"
+                checked={data.is_published}
+                onChange={(e) =>
+                  setData((d) => ({ ...d, is_published: e.target.checked }))
+                }
+              />
+              Опубликован
+            </label>
+            <label>
+              Порядок сортировки
+              <input
+                type="number"
+                value={data.sort_order}
+                onChange={(e) =>
+                  setData((d) => ({
+                    ...d,
+                    sort_order: parseInt(e.target.value, 10) || 0,
+                  }))
+                }
+              />
+            </label>
+          </div>
           
           {/* Ряд 2: Категория */}
           <label>
@@ -575,8 +590,8 @@ export function ProductEdit() {
             <span className="form-hint">Введите теги через пробел, # добавится автоматически</span>
           </label>
           
-          {/* Ряд 7: Цена | Валюта | Порядок сортировки */}
-          <div className="form-row form-row--3cols">
+          {/* Ряд 7: Цена | Валюта */}
+          <div className="form-row">
             <label>
               Цена
               <input
@@ -606,19 +621,6 @@ export function ProductEdit() {
                 <option value="USD">USD</option>
                 <option value="CNY">CNY</option>
               </select>
-            </label>
-            <label>
-              Порядок сортировки
-              <input
-                type="number"
-                value={data.sort_order}
-                onChange={(e) =>
-                  setData((d) => ({
-                    ...d,
-                    sort_order: parseInt(e.target.value, 10) || 0,
-                  }))
-                }
-              />
             </label>
           </div>
         </section>
