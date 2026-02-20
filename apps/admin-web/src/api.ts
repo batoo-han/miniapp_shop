@@ -84,6 +84,9 @@ export type ProductListResponse = {
   per_page: number
 }
 
+export type SortField = 'sort_order' | 'sku' | 'price' | 'manufacturer' | 'status' | 'views' | 'title'
+export type SortOrder = 'asc' | 'desc'
+
 export type ProductListParams = {
   search?: string
   category_id?: string
@@ -91,6 +94,8 @@ export type ProductListParams = {
   manufacturer?: string
   page?: number
   per_page?: number
+  sort_by?: SortField
+  sort_order?: SortOrder
 }
 
 export async function listProducts(params?: ProductListParams): Promise<ProductListResponse> {
@@ -101,6 +106,8 @@ export async function listProducts(params?: ProductListParams): Promise<ProductL
   if (params?.manufacturer) sp.set('manufacturer', params.manufacturer)
   if (params?.page) sp.set('page', String(params.page))
   if (params?.per_page) sp.set('per_page', String(params.per_page))
+  if (params?.sort_by) sp.set('sort_by', params.sort_by)
+  if (params?.sort_order) sp.set('sort_order', params.sort_order)
   const qs = sp.toString()
   const url = `${API_BASE}/admin/products${qs ? `?${qs}` : ''}`
   const res = await fetchWithAuth(url, { headers: authHeaders() })
@@ -108,12 +115,70 @@ export async function listProducts(params?: ProductListParams): Promise<ProductL
   return res.json()
 }
 
-export async function listCategories(): Promise<
-  Array<{ id: string; name: string; slug: string; sort_order: number; parent_id: string | null }>
-> {
+// --- Категории ---
+export type Category = {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  parent_id: string | null
+}
+
+export async function listCategories(): Promise<Category[]> {
   const res = await fetchWithAuth(`${API_BASE}/admin/categories`, { headers: authHeaders() })
   if (!res.ok) throw new Error('Failed to load categories')
   return res.json()
+}
+
+export type CategoryCreate = {
+  name: string
+  slug: string
+  sort_order?: number
+  parent_id?: string | null
+}
+
+export async function createCategory(data: CategoryCreate): Promise<{ id: string; slug: string }> {
+  const res = await fetchWithAuth(`${API_BASE}/admin/categories`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: 'Failed to create category' }))
+    throw new Error(error.detail || 'Failed to create category')
+  }
+  return res.json()
+}
+
+export type CategoryUpdate = {
+  name?: string
+  slug?: string
+  sort_order?: number
+  parent_id?: string | null
+}
+
+export async function updateCategory(id: string, data: CategoryUpdate): Promise<{ id: string }> {
+  const res = await fetchWithAuth(`${API_BASE}/admin/categories/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: 'Failed to update category' }))
+    throw new Error(error.detail || 'Failed to update category')
+  }
+  return res.json()
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  const res = await fetchWithAuth(`${API_BASE}/admin/categories/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ detail: 'Failed to delete category' }))
+    throw new Error(error.detail || 'Failed to delete category')
+  }
 }
 
 export async function listManufacturers(): Promise<string[]> {

@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Login } from './pages/Login'
 import { ProductList } from './pages/ProductList'
 import { ProductEdit } from './pages/ProductEdit'
+import { Categories } from './pages/Categories'
 import { Settings } from './pages/Settings'
 import { ProtectedRoute } from './ProtectedRoute'
 
@@ -22,6 +23,7 @@ export function App() {
           <Route path="/" element={<ProductList />} />
           <Route path="/product/new" element={<ProductEdit />} />
           <Route path="/product/:id/edit" element={<ProductEdit />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -51,6 +51,9 @@ body {
   background: var(--color-header-bg);
   color: var(--color-header-text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .layout-header-inner {
@@ -63,6 +66,9 @@ body {
 }
 
 .layout-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   font-weight: 700;
   font-size: 1.25rem;
   color: var(--color-header-text);
@@ -74,17 +80,28 @@ body {
   opacity: 0.9;
 }
 
+.layout-logo svg {
+  flex-shrink: 0;
+}
+
 .layout-nav {
   display: flex;
   gap: var(--spacing-sm);
 }
 
 .layout-nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   color: var(--color-header-text-muted);
   text-decoration: none;
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   transition: color 0.15s, background 0.15s;
+}
+
+.layout-nav-link svg {
+  flex-shrink: 0;
 }
 
 .layout-nav-link:hover,
@@ -336,12 +353,75 @@ body {
 .pagination {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-lg);
+}
+
+.pagination-per-page {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.pagination-per-page select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  min-width: 70px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
   gap: var(--spacing-md);
 }
 
 .pagination-info {
   font-size: 0.875rem;
   color: var(--color-text-muted);
+}
+
+/* Сортируемые заголовки таблицы */
+.sortable-header {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sortable-header:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sortable-header.active {
+  color: var(--color-primary);
+}
+
+.sortable-header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.sort-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+}
+
+.sortable-header.active .sort-icon {
+  color: var(--color-primary);
+}
+
+/* Кнопки с иконками */
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.btn-with-icon svg {
+  flex-shrink: 0;
 }
 
 .loading {
@@ -410,6 +490,26 @@ body {
   display: flex;
   gap: var(--spacing-lg);
   flex-wrap: wrap;
+}
+
+/* 4 колонки в ряд для объединённых блоков */
+.form-row--4cols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-lg);
+  align-items: end;
+}
+
+@media (max-width: 900px) {
+  .form-row--4cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .form-row--4cols {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-section label {
@@ -486,6 +586,16 @@ body {
   gap: var(--spacing-sm);
   cursor: pointer;
   user-select: none;
+}
+
+/* Чекбокс внутри ряда с другими полями (выравнивание по вертикали) */
+.checkbox-label--inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: auto;
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: 0;
 }
 
 .checkbox-label input[type='checkbox'] {
@@ -722,6 +832,89 @@ body {
 }
 
 .file-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* --- Categories page --- */
+.categories-page {
+  max-width: 1000px;
+}
+
+.categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.categories-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.categories-empty {
+  text-align: center;
+  padding: var(--spacing-xl) var(--spacing-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.categories-empty p {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.categories-empty .hint {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-top: var(--spacing-sm);
+}
+
+/* Подсказки в формах */
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+/* Form group для модальных окон */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);

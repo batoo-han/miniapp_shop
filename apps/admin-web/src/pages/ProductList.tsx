@@ -1,8 +1,10 @@
 /**
- * Список товаров в админке: таблица с превью, фильтрами, раскрытием вариантов, панель статистики.
+ * Список товаров в панели управления: таблица с превью, фильтрами, 
+ * сортировкой по столбцам, раскрытием вариантов, панель статистики.
  */
 import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowUp, ArrowDown, Search, X } from 'lucide-react'
 import {
   listProducts,
   listCategories,
@@ -11,6 +13,8 @@ import {
   deleteProduct,
   type ProductListItem,
   type StatsResponse,
+  type SortField,
+  type SortOrder,
 } from '../api'
 import { getFileUrl } from '../api'
 
@@ -35,6 +39,9 @@ export function ProductList() {
     is_published: undefined as boolean | undefined,
     manufacturer: '',
     page: 1,
+    per_page: 10,
+    sort_by: 'sort_order' as SortField,
+    sort_order: 'asc' as SortOrder,
   })
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -50,7 +57,9 @@ export function ProductList() {
           is_published: appliedFilters.is_published,
           manufacturer: appliedFilters.manufacturer || undefined,
           page: appliedFilters.page,
-          per_page: 20,
+          per_page: appliedFilters.per_page,
+          sort_by: appliedFilters.sort_by,
+          sort_order: appliedFilters.sort_order,
         }),
         getStats(),
         listCategories(),
@@ -73,7 +82,7 @@ export function ProductList() {
 
   const applyFilters = (e: React.FormEvent) => {
     e.preventDefault()
-    setAppliedFilters({ ...formFilters, page: 1 })
+    setAppliedFilters((prev) => ({ ...prev, ...formFilters, page: 1 }))
   }
 
   const resetFilters = () => {
@@ -84,7 +93,7 @@ export function ProductList() {
       manufacturer: '',
     }
     setFormFilters(empty)
-    setAppliedFilters({ ...empty, page: 1 })
+    setAppliedFilters((prev) => ({ ...prev, ...empty, page: 1 }))
   }
 
   const toggleExpand = (id: string) => {
@@ -109,6 +118,48 @@ export function ProductList() {
     }
   }
 
+  // Обработка сортировки по столбцу
+  const handleSort = (field: SortField) => {
+    setAppliedFilters((prev) => {
+      if (prev.sort_by === field) {
+        // Переключение направления сортировки
+        return { ...prev, sort_order: prev.sort_order === 'asc' ? 'desc' : 'asc', page: 1 }
+      }
+      // Новый столбец - сортировка по возрастанию
+      return { ...prev, sort_by: field, sort_order: 'asc', page: 1 }
+    })
+  }
+
+  // Изменение количества элементов на странице
+  const handlePerPageChange = (value: number) => {
+    setAppliedFilters((prev) => ({ ...prev, per_page: value, page: 1 }))
+  }
+
+  // Компонент заголовка сортируемого столбца
+  const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => {
+    const isActive = appliedFilters.sort_by === field
+    const isAsc = appliedFilters.sort_order === 'asc'
+
+    return (
+      <th
+        className={`sortable-header ${isActive ? 'active' : ''}`}
+        onClick={() => handleSort(field)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        <span className="sortable-header-content">
+          {children}
+          <span className="sort-icon">
+            {isActive ? (
+              isAsc ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+            ) : (
+              <ArrowUp size={14} style={{ opacity: 0.3 }} />
+            )}
+          </span>
+        </span>
+      </th>
+    )
+  }
+
   const imgUrl = (p: ProductListItem): string | null => {
     if (p.image_url) {
       const match = p.image_url.match(/\/api\/files\/([a-f0-9-]+)/i)
@@ -119,6 +170,8 @@ export function ProductList() {
 
   if (loading && !data) return <p className="loading">Загрузка...</p>
   if (error && !data) return <p className="error">{error}</p>
+
+  const totalPages = data ? Math.ceil(data.total / appliedFilters.per_page) : 1
 
   return (
     <div className="product-list">
@@ -187,11 +240,13 @@ export function ProductList() {
           <option value="true">Опубликованные</option>
           <option value="false">Черновики</option>
         </select>
-        <button type="submit" className="btn btn-primary">
-          Применить
+        <button type="submit" className="btn btn-primary btn-with-icon">
+          <Search size={16} />
+          <span>Применить</span>
         </button>
-        <button type="button" className="btn btn-secondary" onClick={resetFilters}>
-          Сбросить
+        <button type="button" className="btn btn-secondary btn-with-icon" onClick={resetFilters}>
+          <X size={16} />
+          <span>Сбросить</span>
         </button>
       </form>
 
@@ -205,12 +260,12 @@ export function ProductList() {
               <th style={{ width: 48 }}></th>
               <th>Превью</th>
               <th>Название</th>
-              <th>Артикул</th>
-              <th>Цена</th>
-              <th>Производитель</th>
+              <SortableHeader field="sku">Артикул</SortableHeader>
+              <SortableHeader field="price">Цена</SortableHeader>
+              <SortableHeader field="manufacturer">Производитель</SortableHeader>
               <th>Категория</th>
-              <th>Статус</th>
-              <th>Просмотры</th>
+              <SortableHeader field="status">Статус</SortableHeader>
+              <SortableHeader field="views">Просмотры</SortableHeader>
               <th>Действия</th>
             </tr>
           </thead>
@@ -301,27 +356,43 @@ export function ProductList() {
       </div>
 
       {/* Пагинация */}
-      {data && data.total > data.per_page && (
+      {data && (
         <div className="pagination">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={appliedFilters.page <= 1}
-            onClick={() => setAppliedFilters((p) => ({ ...p, page: p.page - 1 }))}
-          >
-            ← Назад
-          </button>
-          <span className="pagination-info">
-            Страница {appliedFilters.page} из {Math.ceil(data.total / data.per_page)}
-          </span>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={appliedFilters.page >= Math.ceil(data.total / data.per_page)}
-            onClick={() => setAppliedFilters((p) => ({ ...p, page: p.page + 1 }))}
-          >
-            Вперёд →
-          </button>
+          <div className="pagination-per-page">
+            <span>Показывать:</span>
+            <select
+              value={appliedFilters.per_page}
+              onChange={(e) => handlePerPageChange(Number(e.target.value))}
+              className="filter-select"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={appliedFilters.page <= 1}
+              onClick={() => setAppliedFilters((p) => ({ ...p, page: p.page - 1 }))}
+            >
+              ← Назад
+            </button>
+            <span className="pagination-info">
+              Страница {appliedFilters.page} из {totalPages} (всего {data.total})
+            </span>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={appliedFilters.page >= totalPages}
+              onClick={() => setAppliedFilters((p) => ({ ...p, page: p.page + 1 }))}
+            >
+              Вперёд →
+            </button>
+          </div>
         </div>
       )}
     </div>

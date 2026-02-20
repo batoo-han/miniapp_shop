@@ -515,9 +515,10 @@ export function ProductEdit() {
           </label>
         </section>
 
+        {/* Блок "Цена и публикация" - объединённый */}
         <section className="form-section">
-          <h2>Цена</h2>
-          <div className="form-row">
+          <h2>Цена и публикация</h2>
+          <div className="form-row form-row--4cols">
             <label>
               Сумма
               <input
@@ -543,33 +544,30 @@ export function ProductEdit() {
                 }
               />
             </label>
+            <label>
+              Порядок сортировки
+              <input
+                type="number"
+                value={data.sort_order}
+                onChange={(e) =>
+                  setData((d) => ({
+                    ...d,
+                    sort_order: parseInt(e.target.value, 10) || 0,
+                  }))
+                }
+              />
+            </label>
+            <label className="checkbox-label checkbox-label--inline">
+              <input
+                type="checkbox"
+                checked={data.is_published}
+                onChange={(e) =>
+                  setData((d) => ({ ...d, is_published: e.target.checked }))
+                }
+              />
+              Опубликован
+            </label>
           </div>
-        </section>
-
-        <section className="form-section">
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={data.is_published}
-              onChange={(e) =>
-                setData((d) => ({ ...d, is_published: e.target.checked }))
-              }
-            />
-            Опубликован
-          </label>
-          <label>
-            Порядок
-            <input
-              type="number"
-              value={data.sort_order}
-              onChange={(e) =>
-                setData((d) => ({
-                  ...d,
-                  sort_order: parseInt(e.target.value, 10) || 0,
-                }))
-              }
-            />
-          </label>
         </section>
 
         <section className="form-section">

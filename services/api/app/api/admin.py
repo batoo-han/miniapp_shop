@@ -99,8 +99,10 @@ async def admin_list_products(
     manufacturer: str | None = None,
     page: int = 1,
     per_page: int = 50,
+    sort_by: str = "sort_order",
+    sort_order: str = "asc",
 ):
-    """Список товаров с фильтрами и пагинацией."""
+    """Список товаров с фильтрами, сортировкой и пагинацией."""
     filters = []
     if search:
         search_pattern = f"%{search}%"
@@ -121,10 +123,30 @@ async def admin_list_products(
         count_stmt = count_stmt.where(*filters)
     total = (await db.execute(count_stmt)).scalar() or 0
 
+    # Маппинг полей сортировки
+    sort_columns = {
+        "sort_order": Product.sort_order,
+        "sku": Product.sku,
+        "price": Product.price_amount,
+        "manufacturer": Product.manufacturer,
+        "status": Product.is_published,
+        "views": Product.view_count,
+        "title": Product.title,
+    }
+
+    # Получаем колонку для сортировки (по умолчанию sort_order)
+    sort_column = sort_columns.get(sort_by, Product.sort_order)
+
+    # Направление сортировки
+    if sort_order == "desc":
+        order_clause = sort_column.desc().nulls_last()
+    else:
+        order_clause = sort_column.asc().nulls_last()
+
     stmt = (
         base_stmt
         .options(selectinload(Product.images), selectinload(Product.category), selectinload(Product.variants))
-        .order_by(Product.sort_order, Product.created_at.desc())
+        .order_by(order_clause, Product.created_at.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
     )
